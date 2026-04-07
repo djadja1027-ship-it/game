@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🐥 한글 타자 연습</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans KR',sans-serif;min-height:100vh;background:#FFF9F0;
+  background-image:radial-gradient(circle at 10% 20%,#FFE5F0 0%,transparent 35%),
+    radial-gradient(circle at 90% 10%,#E5F5FF 0%,transparent 35%),
+    radial-gradient(circle at 50% 90%,#E8FFE5 0%,transparent 40%);}
+#app{max-width:580px;margin:0 auto;padding:24px 16px 60px;position:relative;}
+
+.deco{position:fixed;pointer-events:none;font-size:28px;opacity:0.12;animation:float 4s ease-in-out infinite;z-index:0;}
+.deco:nth-child(1){top:4%;left:3%;animation-delay:0s;}
+.deco:nth-child(2){top:7%;right:5%;animation-delay:0.7s;}
+.deco:nth-child(3){top:42%;left:1%;animation-delay:1.3s;}
+.deco:nth-child(4){top:60%;right:1%;animation-delay:0.5s;}
+.deco:nth-child(5){bottom:14%;left:5%;animation-delay:1.9s;}
+.deco:nth-child(6){bottom:8%;right:7%;animation-delay:1s;}
+@keyframes float{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-12px) rotate(8deg);}}
+
+.title-wrap{text-align:center;margin-bottom:20px;position:relative;z-index:1;}
+.title-main{font-size:28px;font-weight:900;color:#3B1F8C;display:block;}
+.title-sub{font-size:14px;color:#7B5EA7;margin-top:4px;}
+
+.tabs{display:flex;gap:10px;margin-bottom:20px;position:relative;z-index:1;}
+.tab{flex:1;padding:15px 8px;border-radius:18px;border:3px solid #D4BBFF;background:#fff;color:#7B5EA7;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:all 0.18s;}
+.tab.active{background:#7F77DD;color:#fff;border-color:#534AB7;}
+.tab:hover:not(.active){background:#F0EAFF;}
+
+.card{background:#fff;border-radius:24px;border:3px solid #E8D5FF;padding:20px 18px;margin-bottom:14px;position:relative;z-index:1;}
+.panel-title{font-size:17px;font-weight:700;color:#3B1F8C;margin-bottom:14px;}
+
+/* curriculum map */
+.cur-section{margin-bottom:12px;}
+.cur-cat-title{font-size:12px;font-weight:700;color:#7B5EA7;margin-bottom:7px;padding-left:2px;}
+.cur-grid{display:flex;flex-wrap:wrap;gap:7px;}
+.cur-btn{padding:9px 12px;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;border:2px solid transparent;transition:all 0.15s;}
+.cur-btn.done{background:#EAF3DE;color:#3B6D11;border-color:#97C459;}
+.cur-btn.current{background:#7F77DD;color:#fff;border-color:#534AB7;transform:scale(1.06);}
+.cur-btn.locked{background:#F5F3FF;color:#C4B0E8;border-color:#E8D5FF;cursor:default;}
+.cur-btn.unlocked{background:#FAF6FF;color:#534AB7;border-color:#D4BBFF;}
+.cur-btn.unlocked:hover{background:#F0EAFF;}
+
+/* teacher extra words */
+.teacher-row{display:flex;gap:10px;margin-bottom:14px;}
+#teacher-input{flex:1;padding:16px;font-size:19px;font-weight:700;border-radius:16px;border:3px solid #D4BBFF;color:#3B1F8C;background:#FAF6FF;font-family:inherit;outline:none;transition:border-color 0.15s;}
+#teacher-input:focus{border-color:#7F77DD;}
+.btn-add{padding:16px 20px;background:#7F77DD;color:#fff;border:none;border-radius:16px;font-size:17px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.btn-add:hover{background:#534AB7;}
+.queue-label{font-size:13px;color:#7B5EA7;margin-bottom:8px;font-weight:700;}
+.queue-tags{display:flex;flex-wrap:wrap;gap:7px;min-height:38px;margin-bottom:14px;}
+.qtag{background:#F0EAFF;border-radius:99px;padding:9px 16px;font-size:15px;font-weight:700;color:#534AB7;display:flex;align-items:center;gap:7px;}
+.qtag button{background:none;border:none;cursor:pointer;color:#AFA9EC;font-size:18px;line-height:1;padding:0;font-weight:700;}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;}
+.btn-outline{padding:12px 18px;background:none;border:3px solid #D4BBFF;border-radius:13px;font-size:14px;color:#7B5EA7;font-weight:700;cursor:pointer;font-family:inherit;}
+.btn-outline:hover{background:#F0EAFF;}
+.btn-go{padding:12px 22px;background:#1D9E75;color:#fff;border:none;border-radius:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+.btn-go:hover{background:#0F6E56;}
+
+/* student panel */
+#student-panel{display:none;position:relative;z-index:1;}
+
+.level-header{background:#fff;border-radius:20px;border:3px solid #FFD6E8;padding:14px 18px;margin-bottom:12px;display:flex;align-items:center;gap:12px;}
+.level-emoji{font-size:36px;flex-shrink:0;}
+.level-info{flex:1;}
+.level-num{font-size:11px;font-weight:700;color:#D4537E;margin-bottom:2px;}
+.level-name{font-size:18px;font-weight:900;color:#3B1F8C;}
+.level-desc{font-size:12px;color:#7B5EA7;margin-top:2px;}
+
+/* cycle progress (알 20개) */
+.cycle-bar-wrap{background:#fff;border-radius:16px;border:2px solid #FFE5A0;padding:12px 16px;margin-bottom:12px;}
+.cycle-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.cycle-label{font-size:13px;font-weight:700;color:#854F0B;}
+.cycle-stage{font-size:13px;font-weight:700;padding:4px 12px;border-radius:99px;}
+.cs-egg  {background:#FAEEDA;color:#854F0B;}
+.cs-chick{background:#EAF3DE;color:#3B6D11;}
+.cs-mid  {background:#E1F5EE;color:#0F6E56;}
+.cs-hen  {background:#EEEDFE;color:#534AB7;}
+.cycle-eggs{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;}
+.cegg{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:19px;background:#FFF9F0;border:2px solid #FFE5A0;transition:all 0.25s;}
+.cegg.filled{background:#FAEEDA;border-color:#EF9F27;animation:popIn 0.35s;}
+@keyframes popIn{0%{transform:scale(0);}70%{transform:scale(1.25);}100%{transform:scale(1);}}
+.cycle-bar-out{background:#FFF3D0;border-radius:99px;height:10px;overflow:hidden;}
+.cycle-bar-in{height:100%;border-radius:99px;background:#EF9F27;transition:width 0.35s;}
+
+/* mission progress */
+.mission-prog{background:#fff;border-radius:14px;border:2px solid #D4BBFF;padding:10px 14px;margin-bottom:12px;}
+.mp-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.mp-label{font-size:12px;font-weight:700;color:#534AB7;}
+.mp-count{font-size:12px;font-weight:700;color:#534AB7;}
+.mp-bar-out{background:#F0EAFF;border-radius:99px;height:8px;overflow:hidden;}
+.mp-bar-in{height:100%;border-radius:99px;background:#7F77DD;transition:width 0.3s;}
+
+/* typing */
+.word-card{background:#fff;border-radius:22px;border:3px solid #FFD6E8;padding:24px 18px 18px;margin-bottom:12px;text-align:center;}
+.prompt-label{font-size:15px;color:#D4537E;font-weight:700;margin-bottom:12px;}
+.prompt-word{font-size:52px;font-weight:900;color:#3B1F8C;letter-spacing:5px;min-height:64px;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:3px;margin-bottom:18px;line-height:1.3;}
+.prompt-word.is-sentence{font-size:24px;letter-spacing:1px;line-height:1.6;}
+.ch-correct{color:#1D9E75;}
+.ch-wrong{color:#D85A30;text-decoration:underline;}
+.ch-current{border-bottom:4px solid #7F77DD;color:#3B1F8C;padding-bottom:2px;}
+.ch-pending{color:#C4B0E8;}
+#student-input{width:100%;padding:20px 14px;font-size:27px;font-weight:700;border-radius:17px;border:4px solid #D4BBFF;background:#FAF6FF;color:#3B1F8C;font-family:inherit;outline:none;text-align:center;transition:border-color 0.18s,background 0.18s;}
+#student-input.sm{font-size:18px;}
+#student-input:focus{border-color:#7F77DD;}
+#student-input.ok{border-color:#1D9E75;background:#F0FFF8;}
+#student-input.ng{border-color:#D85A30;background:#FFF5F5;}
+.feedback-msg{font-size:19px;font-weight:700;min-height:30px;margin-top:12px;text-align:center;}
+.feedback-msg.good{color:#1D9E75;}
+.feedback-msg.bad{color:#D85A30;}
+.skip-btn{display:block;width:100%;margin-top:12px;padding:15px;background:#FAF6FF;border:3px solid #D4BBFF;border-radius:15px;font-size:16px;font-weight:700;color:#7B5EA7;cursor:pointer;font-family:inherit;}
+.skip-btn:hover{background:#F0EAFF;}
+
+/* chicken coop */
+.coop-card{background:#fff;border-radius:22px;border:3px solid #FFE5A0;padding:18px 18px 20px;position:relative;z-index:1;}
+.coop-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+.coop-title{font-size:16px;font-weight:700;color:#3B1F8C;}
+.coop-count{font-size:13px;font-weight:700;color:#854F0B;background:#FAEEDA;padding:5px 12px;border-radius:99px;}
+.coop-subtitle{font-size:12px;color:#7B5EA7;margin-bottom:12px;}
+.coop-grid{display:flex;flex-wrap:wrap;gap:6px;}
+.coop-slot{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:26px;background:#FFF9F0;border:2px solid #FFE5A0;transition:all 0.3s;}
+.coop-slot.filled{background:#FAEEDA;border-color:#EF9F27;animation:popIn 0.4s;}
+.coop-slot.current-anim{animation:bigPopIn 0.5s;}
+@keyframes bigPopIn{0%{transform:scale(0) rotate(-10deg);}70%{transform:scale(1.3) rotate(5deg);}100%{transform:scale(1) rotate(0deg);}}
+
+/* done */
+.done-wrap{text-align:center;padding:2rem 1rem;}
+.done-big{font-size:64px;display:block;margin-bottom:14px;animation:bigBounce 0.8s infinite alternate;}
+.done-txt{font-size:19px;font-weight:700;color:#3B1F8C;line-height:1.6;}
+.btn-restart{margin-top:18px;padding:15px 34px;background:#7F77DD;color:#fff;border:none;border-radius:17px;font-size:17px;font-weight:700;cursor:pointer;font-family:inherit;}
+.btn-restart:hover{background:#534AB7;}
+
+/* burst overlay */
+.burst-overlay{display:none;position:fixed;inset:0;align-items:center;justify-content:center;background:rgba(59,31,140,0.42);z-index:999;}
+.burst-box{background:#fff;border-radius:30px;border:4px solid #FFD6E8;padding:32px 36px;text-align:center;margin:18px;animation:popIn 0.4s;max-width:340px;width:100%;}
+.burst-emoji{font-size:76px;animation:bigBounce 0.6s infinite alternate;margin-bottom:12px;display:block;}
+@keyframes bigBounce{from{transform:translateY(0) scale(1);}to{transform:translateY(-13px) scale(1.08);}}
+.burst-title{font-size:24px;font-weight:900;color:#3B1F8C;margin-bottom:7px;}
+.burst-sub{font-size:14px;color:#7B5EA7;font-weight:700;margin-bottom:20px;line-height:1.7;white-space:pre-line;}
+.btn-continue{padding:16px 40px;background:#7F77DD;color:#fff;border:none;border-radius:18px;font-size:19px;font-weight:700;cursor:pointer;font-family:inherit;}
+.btn-continue:hover{background:#534AB7;}
+</style>
+</head>
+<body>
+
+<span class="deco">🌸</span>
+<span class="deco">⭐</span>
+<span class="deco">🌈</span>
+<span class="deco">🌻</span>
+<span class="deco">🍀</span>
+<span class="deco">🎀</span>
+
+<div id="app">
+  <div class="title-wrap">
+    <span class="title-main">🐔 한글 타자 연습</span>
+    <span class="title-sub">알을 모아 닭을 키우고 닭장을 채워요!</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" id="tab-t" onclick="switchTab('teacher')">👩‍🏫 선생님</button>
+    <button class="tab" id="tab-s" onclick="switchTab('student')">🧒 학생</button>
+  </div>
+
+  <!-- 선생님 패널 -->
+  <div id="teacher-panel">
+    <div class="card">
+      <div class="panel-title">📚 30단계 자동 커리큘럼</div>
+      <div id="cur-map"></div>
+    </div>
+    <div class="card">
+      <div class="panel-title">✏️ 선생님 추가 단어 (선택)</div>
+      <div class="teacher-row">
+        <input type="text" id="teacher-input" placeholder="단어 입력 후 Enter" />
+        <button class="btn-add" onclick="addWord()">추가 ＋</button>
+      </div>
+      <div class="queue-label">📋 추가된 단어</div>
+      <div class="queue-tags" id="queue-tags">
+        <span style="color:#C4B0E8;font-size:14px;font-weight:700;">없음 (자동 미션만 진행)</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn-outline" onclick="clearWords()">전체 지우기</button>
+        <button class="btn-go" onclick="switchTab('student')">학생 모드로 → 🐣</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 학생 패널 -->
+  <div id="student-panel">
+    <div id="level-header-area"></div>
+    <div id="cycle-bar-area"></div>
+    <div id="mission-prog-area"></div>
+    <div id="typing-area"></div>
+    <!-- 닭장 -->
+    <div class="coop-card">
+      <div class="coop-header">
+        <div class="coop-title">🏡 닭장</div>
+        <div class="coop-count" id="coop-count">0 / 30마리</div>
+      </div>
+      <div class="coop-subtitle">단계를 클리어할 때마다 닭이 한 마리씩 들어와요!</div>
+      <div class="coop-grid" id="coop-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 오버레이 -->
+<div class="burst-overlay" id="burst-overlay">
+  <div class="burst-box">
+    <span class="burst-emoji" id="burst-emoji">🎊</span>
+    <div class="burst-title" id="burst-title"></div>
+    <div class="burst-sub" id="burst-sub"></div>
+    <button class="btn-continue" onclick="closeBurst()">계속하기 🎉</button>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════
+   30단계 커리큘럼
+════════════════════════════════ */
+const CURRICULUM=[
+  {name:'기본 모음 1',  emoji:'🌱',desc:'ㅏ ㅑ ㅓ ㅕ ㅗ ㅛ ㅜ ㅠ ㅡ ㅣ',cat:'모음',
+   words:['ㅏ','ㅑ','ㅓ','ㅕ','ㅗ','ㅛ','ㅜ','ㅠ','ㅡ','ㅣ']},
+  {name:'기본 모음 2',  emoji:'🌿',desc:'아 야 어 여 오 요 우 유 으 이',cat:'모음',
+   words:['아','야','어','여','오','요','우','유','으','이']},
+  {name:'이중 모음',    emoji:'🍀',desc:'애 에 외 위 와 워 의',cat:'모음',
+   words:['애','에','외','위','의','와','워','왜','웨','얘']},
+  {name:'기본 자음 1',  emoji:'🌟',desc:'ㄱ ㄴ ㄷ ㄹ ㅁ ㅂ ㅅ ㅇ ㅈ ㅊ',cat:'자음',
+   words:['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ']},
+  {name:'기본 자음 2',  emoji:'⭐',desc:'ㅋ ㅌ ㅍ ㅎ 쌍자음',cat:'자음',
+   words:['ㅋ','ㅌ','ㅍ','ㅎ','ㄲ','ㄸ','ㅃ','ㅆ','ㅉ','ㄳ']},
+
+  {name:'한 글자 1',    emoji:'🐣',desc:'가 나 다 라 마 바 사 아 자 차',cat:'한 글자',
+   words:['가','나','다','라','마','바','사','아','자','차']},
+  {name:'한 글자 2',    emoji:'🐤',desc:'카 타 파 하 기 니 디 리 미 비',cat:'한 글자',
+   words:['카','타','파','하','기','니','디','리','미','비']},
+  {name:'한 글자 3',    emoji:'🌸',desc:'고 노 도 로 모 보 소 오 조 초',cat:'한 글자',
+   words:['고','노','도','로','모','보','소','오','조','초']},
+  {name:'한 글자 4',    emoji:'🌺',desc:'구 누 두 루 무 부 수 우 주 추',cat:'한 글자',
+   words:['구','누','두','루','무','부','수','우','주','추']},
+  {name:'한 글자 5',    emoji:'🌼',desc:'복합 모음 글자',cat:'한 글자',
+   words:['과','봐','궤','뒤','쥐','위','새','게','세','배']},
+
+  {name:'받침 글자 1',  emoji:'🐰',desc:'ㅇ 받침 — 강 방 당 랑',cat:'받침',
+   words:['강','방','당','랑','망','상','장','창','항','양']},
+  {name:'받침 글자 2',  emoji:'🐱',desc:'ㄱ ㄴ ㄷ 받침',cat:'받침',
+   words:['각','간','달','박','난','날','말','삭','탁','칸']},
+  {name:'받침 글자 3',  emoji:'🐶',desc:'ㄹ ㅁ ㅂ 받침',cat:'받침',
+   words:['발','말','살','밤','담','삼','입','밥','탑','법']},
+  {name:'받침 글자 4',  emoji:'🦊',desc:'ㅅ ㅈ ㄷ 받침',cat:'받침',
+   words:['빛','꽃','낮','밭','옷','낱','맛','겉','못','솥']},
+  {name:'받침 글자 5',  emoji:'🐸',desc:'쌍받침·겹받침',cat:'받침',
+   words:['닭','흙','삶','읽','끝','없','앉','젊','짧','밝']},
+
+  {name:'두 글자 1',    emoji:'🍎',desc:'과일·음식',cat:'두 글자',
+   words:['사과','포도','딸기','수박','참외','귤','배','감','콩','쌀']},
+  {name:'두 글자 2',    emoji:'🐕',desc:'동물 이름',cat:'두 글자',
+   words:['소','말','돼지','닭','양','오리','고래','독수리','다람쥐','토끼']},
+  {name:'두 글자 3',    emoji:'🏫',desc:'학교 생활',cat:'두 글자',
+   words:['학교','교실','선생님','친구','공부','숙제','급식','도서관','운동장','칠판']},
+  {name:'두 글자 4',    emoji:'🌈',desc:'자연·날씨',cat:'두 글자',
+   words:['하늘','구름','바람','햇살','무지개','천둥','번개','안개','태양','바다']},
+  {name:'두 글자 5',    emoji:'👨‍👩‍👧',desc:'가족 이름',cat:'두 글자',
+   words:['아빠','엄마','할머니','할아버지','오빠','언니','동생','형','누나','사촌']},
+
+  {name:'세 글자 1',    emoji:'🚗',desc:'탈것 이름',cat:'세 글자',
+   words:['자동차','버스','기차','비행기','자전거','지하철','트럭','택시','오토바이','배']},
+  {name:'세 글자 2',    emoji:'🎨',desc:'색깔 이름',cat:'세 글자',
+   words:['빨간색','파란색','노란색','초록색','보라색','주황색','분홍색','하얀색','검은색','갈색']},
+  {name:'세 글자 3',    emoji:'📚',desc:'학용품 이름',cat:'세 글자',
+   words:['연필','지우개','공책','색연필','가위','풀','자','색종이','크레파스','도화지']},
+  {name:'세 글자 4',    emoji:'🏃',desc:'움직임 낱말',cat:'세 글자',
+   words:['달리기','뛰어넘기','던지기','잡기','굴리기','당기기','밀기','오르기','돌리기','두드리기']},
+  {name:'세 글자 5',    emoji:'💝',desc:'느낌 표현',cat:'세 글자',
+   words:['기쁘다','슬프다','무섭다','신나다','부끄럽다','따뜻하다','차갑다','배고프다','졸리다','피곤하다']},
+
+  {name:'짧은 문장 1',  emoji:'📝',desc:'나·우리 문장',cat:'문장',
+   words:['나는 학교에 가요.','우리는 친구예요.','나는 밥을 먹어요.','우리 집은 커요.','나는 책을 읽어요.','하늘이 파래요.','꽃이 예뻐요.','비가 와요.','눈이 내려요.','바람이 불어요.']},
+  {name:'짧은 문장 2',  emoji:'📖',desc:'날씨·자연 문장',cat:'문장',
+   words:['오늘 날씨가 맑아요.','꽃잎이 날려요.','새가 노래해요.','강물이 흘러요.','달이 밝아요.','별이 반짝여요.','구름이 떠가요.','산이 푸르러요.','물이 차가워요.','바람이 시원해요.']},
+  {name:'긴 문장 1',    emoji:'🌟',desc:'일상 문장',cat:'문장',
+   words:['오늘 날씨가 맑고 따뜻해요.','강아지가 공원에서 뛰어놀아요.','엄마와 함께 시장에 갔어요.','친구랑 놀이터에서 놀았어요.','선생님께서 칭찬해 주셨어요.','아침에 일찍 일어났어요.','저녁에 가족과 밥을 먹었어요.','오늘 재미있는 책을 읽었어요.','동생과 함께 그림을 그렸어요.','할머니께 전화를 드렸어요.']},
+  {name:'긴 문장 2',    emoji:'🏆',desc:'학교·독서 문장',cat:'문장',
+   words:['도서관에서 재미있는 책을 빌렸어요.','급식 시간에 맛있는 밥을 먹었어요.','운동장에서 친구들과 축구를 했어요.','선생님께 모르는 것을 여쭤봤어요.','오늘 학교에서 그림 그리기를 배웠어요.','체육 시간에 줄넘기를 잘했어요.','음악 시간에 노래를 신나게 불렀어요.','미술 시간에 찰흙으로 동물을 만들었어요.','과학 시간에 식물을 관찰했어요.','수학 문제를 혼자서 풀었어요.']},
+  {name:'문단 도전! 👑',emoji:'👑',desc:'두 문장 연속 도전',cat:'문단',
+   words:['봄이 왔어요. 꽃이 활짝 피었어요.','아침에 일어나서 이를 닦았어요. 그리고 학교에 갔어요.','오늘은 체육 시간이 있어요. 운동장에서 달리기를 해요.','도서관에서 책을 읽었어요. 정말 재미있는 이야기였어요.','친구에게 선물을 받았어요. 정말 기쁘고 감사했어요.','여름이 되었어요. 수박이 맛있는 계절이에요.','가을 하늘이 높아요. 단풍잎이 예쁘게 물들었어요.','겨울에 눈이 내렸어요. 온 세상이 하얗게 되었어요.','오늘은 소풍날이에요. 친구들과 함께 산에 올라갔어요.','열심히 공부했어요. 선생님께 칭찬을 받았어요.']},
+];
+
+const CATS=['모음','자음','한 글자','받침','두 글자','세 글자','문장','문단'];
+
+/* ── 사이클 단계 (알 20개 기준) ── */
+const CYCLE_STAGES=[
+  {at:0,  emoji:'🥚', label:'알 모으는 중', cls:'cs-egg'},
+  {at:7,  emoji:'🐣', label:'병아리!',      cls:'cs-chick'},
+  {at:13, emoji:'🐤', label:'중닭!',        cls:'cs-mid'},
+  {at:20, emoji:'🐔', label:'닭 완성!',     cls:'cs-hen'},
+];
+const EGG_MAX=20;
+const WPL=20; /* 레벨당 단어 수 — 알 20개 모으기 */
+const COOP_MAX=30;
+
+/* ── state ── */
+let customWords=[], currentLevel=0, missionWords=[], missionIdx=0;
+let cycleEggs=0;      /* 이번 사이클 알 (0~20) */
+let coopCount=0;      /* 닭장 채운 닭 수 (0~30) */
+let clearedLevels=new Set();
+let pendingBurst=null;
+
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+function cycleStageIdx(n){let s=0;CYCLE_STAGES.forEach((st,i)=>{if(n>=st.at)s=i;});return s;}
+
+/* ── tab ── */
+function switchTab(t){
+  document.getElementById('tab-t').classList.toggle('active',t==='teacher');
+  document.getElementById('tab-s').classList.toggle('active',t==='student');
+  document.getElementById('teacher-panel').style.display=t==='teacher'?'block':'none';
+  document.getElementById('student-panel').style.display=t==='student'?'block':'none';
+  if(t==='student') startLevel(currentLevel);
+}
+
+/* ── teacher ── */
+function addWord(){
+  const inp=document.getElementById('teacher-input');
+  const v=inp.value.trim();if(!v)return;
+  customWords.push(v);inp.value='';renderQueue();inp.focus();
+}
+function removeWord(i){customWords.splice(i,1);renderQueue();}
+function clearWords(){customWords=[];renderQueue();}
+function renderQueue(){
+  const el=document.getElementById('queue-tags');
+  if(!customWords.length){el.innerHTML='<span style="color:#C4B0E8;font-size:14px;font-weight:700;">없음 (자동 미션만 진행)</span>';return;}
+  el.innerHTML=customWords.map((w,i)=>`<div class="qtag">${w}<button onclick="removeWord(${i})">×</button></div>`).join('');
+}
+document.getElementById('teacher-input').addEventListener('keydown',e=>{if(e.key==='Enter')addWord();});
+
+/* ── curriculum map ── */
+function renderCurMap(){
+  const map=document.getElementById('cur-map');
+  const groups={};
+  CURRICULUM.forEach((lv,i)=>{if(!groups[lv.cat])groups[lv.cat]=[];groups[lv.cat].push({lv,i});});
+  let html='';
+  CATS.forEach(cat=>{
+    if(!groups[cat])return;
+    html+=`<div class="cur-section"><div class="cur-cat-title">${cat}</div><div class="cur-grid">`;
+    groups[cat].forEach(({lv,i})=>{
+      const cls=clearedLevels.has(i)?'done':i===currentLevel?'current':i<currentLevel?'unlocked':'locked';
+      const icon=clearedLevels.has(i)?'✅':i<=currentLevel?lv.emoji:'🔒';
+      const oc=(cls==='unlocked'||cls==='current')?`onclick="jumpLevel(${i})"`:'';
+      html+=`<button class="cur-btn ${cls}" ${oc}>${icon} ${i+1}단계</button>`;
+    });
+    html+='</div></div>';
+  });
+  map.innerHTML=html;
+}
+function jumpLevel(i){currentLevel=i;renderCurMap();}
+
+/* ── level start ── */
+function startLevel(idx){
+  currentLevel=idx;
+  const lv=CURRICULUM[idx];
+  let pool=[...lv.words];
+  while(pool.length<WPL) pool=[...pool,...lv.words]; /* 부족하면 반복 */
+  if(customWords.length) pool=[...customWords,...pool];
+  missionWords=shuffle(pool).slice(0,WPL);
+  missionIdx=0;
+  cycleEggs=0;
+  renderLevelHeader();
+  renderCycleBar();
+  renderMissionProg();
+  renderWord();
+  renderCoop();
+  renderCurMap();
+}
+
+function renderLevelHeader(){
+  const lv=CURRICULUM[currentLevel];
+  document.getElementById('level-header-area').innerHTML=`
+    <div class="level-header">
+      <div class="level-emoji">${lv.emoji}</div>
+      <div class="level-info">
+        <div class="level-num">${currentLevel+1}단계 · ${lv.cat}</div>
+        <div class="level-name">${lv.name}</div>
+        <div class="level-desc">${lv.desc}</div>
+      </div>
+    </div>`;
+}
+
+function renderCycleBar(){
+  const si=cycleStageIdx(cycleEggs);
+  const st=CYCLE_STAGES[si];
+  const pct=Math.round((cycleEggs/EGG_MAX)*100);
+  let eggsHtml='';
+  for(let i=0;i<EGG_MAX;i++){
+    const filled=i<cycleEggs;
+    const esi=cycleStageIdx(i+1);
+    const emoji=CYCLE_STAGES[esi].emoji;
+    eggsHtml+=`<div class="cegg${filled?' filled':''}">${filled?emoji:''}</div>`;
+  }
+  document.getElementById('cycle-bar-area').innerHTML=`
+    <div class="cycle-bar-wrap">
+      <div class="cycle-top">
+        <span class="cycle-label">🥚 알 모으기 (${cycleEggs} / ${EGG_MAX}개)</span>
+        <span class="cycle-stage ${st.cls}">${st.emoji} ${st.label}</span>
+      </div>
+      <div class="cycle-eggs">${eggsHtml}</div>
+      <div class="cycle-bar-out"><div class="cycle-bar-in" style="width:${pct}%"></div></div>
+    </div>`;
+}
+
+function renderMissionProg(){
+  const pct=Math.round((missionIdx/WPL)*100);
+  document.getElementById('mission-prog-area').innerHTML=`
+    <div class="mission-prog">
+      <div class="mp-row">
+        <span class="mp-label">이번 레벨 진행</span>
+        <span class="mp-count">${missionIdx} / ${WPL}문제</span>
+      </div>
+      <div class="mp-bar-out"><div class="mp-bar-in" style="width:${pct}%"></div></div>
+    </div>`;
+}
+
+/* ── typing ── */
+function renderWord(){
+  const area=document.getElementById('typing-area');
+  if(missionIdx>=missionWords.length){
+    /* 레벨 클리어 */
+    clearedLevels.add(currentLevel);
+    coopCount=Math.min(coopCount+1,COOP_MAX);
+    renderCoop();
+    renderCurMap();
+    if(currentLevel>=CURRICULUM.length-1){
+      area.innerHTML=`<div class="done-wrap">
+        <span class="done-big">👑</span>
+        <div class="done-txt">30단계 모두 완성!<br>닭장이 꽉 찼어요! 🏡🐔<br>정말 대단해요!</div>
+        <button class="btn-restart" onclick="restartAll()">처음부터 다시 하기 🔄</button>
+      </div>`;
+    } else {
+      area.innerHTML='';
+      showLevelClear();
+    }
+    return;
+  }
+  const word=missionWords[missionIdx];
+  const isSent=word.length>6;
+  area.innerHTML=`<div class="word-card">
+    <div class="prompt-label">👇 따라 써보세요!</div>
+    <div class="prompt-word${isSent?' is-sentence':''}" id="prompt-word"></div>
+    <input type="text" id="student-input"${isSent?' class="sm"':''}
+      placeholder="여기에 입력해요" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+    <div class="feedback-msg" id="feedback-msg"></div>
+    <button class="skip-btn" onclick="skipWord()">모르겠어요 (건너뛰기) 🙈</button>
+  </div>`;
+  renderChars(word,'');
+  const inp=document.getElementById('student-input');
+  inp.addEventListener('input',onInput);
+  inp.focus();
+}
+
+function renderChars(target,typed){
+  const el=document.getElementById('prompt-word');if(!el)return;
+  let html='';
+  for(let i=0;i<target.length;i++){
+    const ch=target[i]===' '?'\u00a0':target[i];
+    const cls=i<typed.length?(typed[i]===target[i]?'ch-correct':'ch-wrong'):i===typed.length?'ch-current':'ch-pending';
+    html+=`<span class="${cls}">${ch}</span>`;
+  }
+  el.innerHTML=html;
+}
+
+function onInput(e){
+  const target=missionWords[missionIdx],typed=e.target.value;
+  renderChars(target,typed);
+  const fm=document.getElementById('feedback-msg');
+  const isSm=e.target.classList.contains('sm');
+  if(typed===target){
+    e.target.className=(isSm?'sm ':'')+'ok';
+    if(fm){fm.textContent='🎉 정답! 알 하나 획득!';fm.className='feedback-msg good';}
+    cycleEggs=Math.min(cycleEggs+1,EGG_MAX);
+    renderCycleBar();
+    /* 사이클 중간 변신 체크 */
+    const midBurst=CYCLE_STAGES.find(s=>s.at===cycleEggs&&s.at>0&&s.at<EGG_MAX);
+    if(midBurst){
+      pendingBurst={type:'mid',emoji:midBurst.emoji,title:`${midBurst.label} 🎉`,sub:`알을 ${midBurst.at}개 모았어요!\n계속 모아봐요!`};
+      setTimeout(showBurst,400);return;
+    }
+    missionIdx++;renderMissionProg();
+    setTimeout(renderWord,600);
+  } else if(typed.length>=target.length){
+    e.target.className=(isSm?'sm ':'')+'ng';
+    if(fm){fm.textContent='🙈 다시 해봐요!';fm.className='feedback-msg bad';}
+  } else {
+    e.target.className=isSm?'sm':'';
+    if(fm){fm.textContent='';fm.className='feedback-msg';}
+  }
+}
+
+function skipWord(){missionIdx++;renderMissionProg();renderWord();}
+
+/* ── chicken coop ── */
+function renderCoop(){
+  const grid=document.getElementById('coop-grid');
+  let html='';
+  for(let i=0;i<COOP_MAX;i++){
+    const filled=i<coopCount;
+    const isCurrent=filled&&i===coopCount-1;
+    html+=`<div class="coop-slot${filled?' filled':''}${isCurrent?' current-anim':''}">${filled?'🐔':''}</div>`;
+  }
+  grid.innerHTML=html;
+  document.getElementById('coop-count').textContent=`${coopCount} / ${COOP_MAX}마리`;
+}
+
+/* ── level clear ── */
+function showLevelClear(){
+  const lv=CURRICULUM[currentLevel];
+  const next=CURRICULUM[currentLevel+1];
+  pendingBurst={
+    type:'level',
+    emoji:'🐔',
+    title:`${currentLevel+1}단계 클리어!`,
+    sub:`닭이 한 마리 늘었어요! (${coopCount}마리)\n\n다음은 ${currentLevel+2}단계\n「${next.name}」이에요!`
+  };
+  showBurst();
+}
+
+/* ── burst overlay ── */
+function showBurst(){
+  if(!pendingBurst)return;
+  document.getElementById('burst-emoji').textContent=pendingBurst.emoji;
+  document.getElementById('burst-title').textContent=pendingBurst.title;
+  document.getElementById('burst-sub').textContent=pendingBurst.sub||'';
+  document.getElementById('burst-overlay').style.display='flex';
+}
+function closeBurst(){
+  document.getElementById('burst-overlay').style.display='none';
+  const type=pendingBurst?.type;
+  pendingBurst=null;
+  if(type==='level'){
+    currentLevel++;
+    startLevel(currentLevel);
+  } else {
+    /* mid burst: 다음 문제로 */
+    missionIdx++;renderMissionProg();renderWord();
+  }
+}
+
+/* ── restart ── */
+function restartAll(){
+  currentLevel=0;cycleEggs=0;coopCount=0;clearedLevels.clear();
+  startLevel(0);
+}
+
+/* ── init ── */
+renderCurMap();
+</script>
+</body>
+</html>
