@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 AI 로봇 키우기 타자연습</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        .cyber-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0; overflow: hidden;
+        }
+        .circuit {
+            position: absolute; background: rgba(0,255,255,0.1);
+            animation: circuit-move 20s linear infinite;
+        }
+        @keyframes circuit-move {
+            0%   { transform: translateY(0) translateX(0); opacity: 0; }
+            50%  { opacity: 0.3; }
+            100% { transform: translateY(-100vh) translateX(50px); opacity: 0; }
+        }
+        .neon-particle {
+            position: absolute; width: 2px; height: 2px;
+            background: cyan; border-radius: 50%;
+            animation: particle-float 4s ease-in-out infinite;
+            box-shadow: 0 0 10px cyan;
+        }
+        @keyframes particle-float {
+            0%,100% { transform: translateY(0) translateX(0); opacity: 0.3; }
+            50%      { transform: translateY(-50px) translateX(30px); opacity: 1; }
+        }
+
+        /* ── 사운드 컨트롤 바 ── */
+        .sound-bar {
+            display: flex; align-items: center; justify-content: flex-end; gap: 14px;
+            margin-bottom: 18px;
+            padding: 10px 16px;
+            background: rgba(0,255,255,0.06);
+            border-radius: 14px;
+            border: 1.5px solid rgba(0,255,255,0.2);
+        }
+        .snd-btn {
+            display: flex; align-items: center; gap: 6px;
+            padding: 7px 16px; border-radius: 20px;
+            border: 2px solid rgba(0,255,255,0.4);
+            background: rgba(0,0,0,0.4);
+            color: #00ffff; font-size: 0.92em; font-weight: bold;
+            cursor: pointer; font-family: inherit; transition: all 0.2s;
+        }
+        .snd-btn:hover  { background: rgba(0,60,120,0.5); }
+        .snd-btn.active { background: linear-gradient(135deg,#00ffff,#0099ff); color: #000; border-color: transparent; }
+        .snd-btn.muted  { background: rgba(0,0,0,0.3); color: #555; border-color: #333; }
+        .vol-wrap { display: flex; align-items: center; gap: 8px; }
+        .vol-wrap label { font-size: 0.88em; font-weight: bold; color: #00ffff; }
+        input[type=range].vol-slider { width: 88px; accent-color: #00ffff; cursor: pointer; }
+
+        .container {
+            background: linear-gradient(135deg, rgba(15,12,41,0.95), rgba(48,43,99,0.95));
+            border-radius: 30px; padding: 40px; max-width: 1100px; width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 100px rgba(0,255,255,0.3),
+                        inset 0 0 50px rgba(0,255,255,0.1);
+            border: 3px solid rgba(0,255,255,0.3);
+            position: relative; z-index: 1;
+        }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h1 {
+            background: linear-gradient(135deg, #00ffff, #00ff88, #0099ff);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; font-size: 3em; margin-bottom: 10px;
+            animation: neon-glow 2s ease-in-out infinite;
+        }
+        @keyframes neon-glow {
+            0%,100% { filter: drop-shadow(0 0 10px rgba(0,255,255,0.8)); }
+            50%      { filter: drop-shadow(0 0 30px rgba(0,255,255,1)); }
+        }
+        .subtitle { color: #00ffff; font-size: 1.2em; text-shadow: 0 0 10px rgba(0,255,255,0.5); }
+
+        .progress-area {
+            background: linear-gradient(135deg, rgba(0,255,255,0.1), rgba(0,153,255,0.1));
+            border-radius: 20px; padding: 25px; margin-bottom: 30px;
+            border: 2px solid rgba(0,255,255,0.3);
+            box-shadow: 0 0 20px rgba(0,255,255,0.2);
+        }
+        .level-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .level-badge {
+            background: linear-gradient(135deg, #00ffff, #0099ff); color: #000;
+            padding: 12px 30px; border-radius: 50px; font-size: 1.3em; font-weight: bold;
+            box-shadow: 0 0 20px rgba(0,255,255,0.6);
+        }
+        .mission-counter {
+            font-size: 1.4em; color: #00ffff; font-weight: bold;
+            background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 20px;
+            box-shadow: 0 0 15px rgba(0,255,255,0.3);
+            border: 2px solid rgba(0,255,255,0.3);
+        }
+        .robot-lab {
+            display: flex; justify-content: space-around; align-items: flex-end;
+            margin: 20px 0; padding: 40px 20px;
+            background: linear-gradient(to bottom, rgba(0,20,40,0.8) 0%, rgba(0,40,80,0.8) 50%, rgba(0,60,120,0.8) 100%);
+            border-radius: 20px; min-height: 300px; position: relative; overflow: hidden;
+            box-shadow: inset 0 -50px 100px rgba(0,0,0,0.5);
+            border: 2px solid rgba(0,255,255,0.2);
+        }
+        .robot-lab::before {
+            content: '🏭'; position: absolute; font-size: 10em; opacity: 0.1;
+            left: 50%; bottom: -30px; transform: translateX(-50%);
+        }
+        .robot-lab::after {
+            content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 80px;
+            background: linear-gradient(to top, rgba(0,255,255,0.1), transparent);
+        }
+        .growth-stage {
+            text-align: center; transition: all 0.5s ease; position: relative; z-index: 2;
+            filter: brightness(0.5) grayscale(0.8);
+        }
+        .growth-stage.active { transform: scale(1.4); filter: brightness(1.3) grayscale(0); }
+        .robot-icon {
+            font-size: 5.5em; margin-bottom: 10px;
+            animation: robot-idle 3s ease-in-out infinite;
+            filter: drop-shadow(0 0 15px rgba(0,255,255,0.5));
+        }
+        @keyframes robot-idle {
+            0%,100% { transform: translateY(0px) rotate(0deg); }
+            50%      { transform: translateY(-20px) rotate(5deg); }
+        }
+        .growth-stage.active .robot-icon { animation: robot-active 1s ease-in-out infinite, cyber-pulse 2s infinite; }
+        @keyframes robot-active {
+            0%,100% { transform: translateY(0px) scale(1); }
+            50%      { transform: translateY(-15px) scale(1.1); }
+        }
+        @keyframes cyber-pulse {
+            0%,100% { filter: drop-shadow(0 0 20px rgba(0,255,255,1)) drop-shadow(0 0 40px rgba(0,153,255,0.8)); }
+            50%      { filter: drop-shadow(0 0 40px rgba(0,255,255,1)) drop-shadow(0 0 80px rgba(0,153,255,1)); }
+        }
+        .stage-label {
+            font-weight: bold; color: #00ffff;
+            background: linear-gradient(135deg, rgba(0,0,0,0.8), rgba(0,60,120,0.8));
+            padding: 10px 18px; border-radius: 15px; font-size: 1.1em;
+            box-shadow: 0 0 15px rgba(0,255,255,0.5);
+            border: 2px solid rgba(0,255,255,0.5);
+            text-shadow: 0 0 10px rgba(0,255,255,0.8);
+        }
+        .chip-counter {
+            font-size: 1.2em; color: #00ff88; margin-top: 8px; font-weight: bold;
+            text-shadow: 0 0 10px rgba(0,255,136,0.8);
+        }
+        .game-area {
+            background: rgba(0,0,0,0.6);
+            border: 4px solid; border-image: linear-gradient(135deg,#00ffff,#0099ff,#00ff88) 1;
+            border-radius: 15px; padding: 30px; margin-bottom: 20px;
+            box-shadow: 0 0 30px rgba(0,255,255,0.3);
+        }
+        .mission-text {
+            font-size: 2.3em; text-align: center; color: #00ffff;
+            padding: 25px; border-radius: 15px; margin-bottom: 20px;
+            letter-spacing: 2px; font-weight: bold;
+            background: rgba(0,60,120,0.3);
+            border: 3px dashed rgba(0,255,255,0.4);
+            text-shadow: 0 0 10px rgba(0,255,255,0.8);
+        }
+        .input-area {
+            width: 100%; font-size: 2em; padding: 20px;
+            border: 4px solid rgba(0,255,255,0.3); border-radius: 15px;
+            text-align: center; font-family: inherit; transition: all 0.3s;
+            background: rgba(0,0,0,0.5); color: #00ffff;
+        }
+        .input-area:focus {
+            outline: none; border-color: #00ffff; background: rgba(0,60,120,0.3);
+            box-shadow: 0 0 30px rgba(0,255,255,0.6), 0 0 60px rgba(0,153,255,0.4);
+        }
+        .input-area.correct {
+            border-color: #00ff88; background: rgba(0,255,136,0.2);
+            animation: success-pulse 0.5s ease;
+        }
+        @keyframes success-pulse {
+            0%,100% { transform: scale(1); box-shadow: 0 0 20px rgba(0,255,136,0.8); }
+            50%      { transform: scale(1.02); box-shadow: 0 0 40px rgba(0,255,136,1); }
+        }
+        .input-area.wrong {
+            border-color: #ff0066; background: rgba(255,0,102,0.2);
+            animation: error-shake 0.5s;
+        }
+        @keyframes error-shake {
+            0%,100% { transform: translateX(0); }
+            25%      { transform: translateX(-20px); }
+            75%      { transform: translateX(20px); }
+        }
+        .buttons { display: flex; gap: 15px; margin-top: 20px; }
+        button {
+            flex: 1; padding: 20px; font-size: 1.3em; border: none; border-radius: 15px;
+            cursor: pointer; font-weight: bold; transition: all 0.3s;
+            position: relative; overflow: hidden;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        button::before {
+            content: ''; position: absolute; top: 50%; left: 50%;
+            width: 0; height: 0; border-radius: 50%;
+            background: rgba(255,255,255,0.3); transform: translate(-50%,-50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        button:hover::before { width: 400px; height: 400px; }
+        .btn-next {
+            background: linear-gradient(135deg, #00ffff, #0099ff); color: #000;
+            box-shadow: 0 0 20px rgba(0,255,255,0.6);
+        }
+        .btn-next:hover { transform: translateY(-3px); box-shadow: 0 0 30px rgba(0,255,255,0.8); }
+        .btn-custom {
+            background: linear-gradient(135deg, #00ff88, #00ccaa); color: #000;
+            box-shadow: 0 0 20px rgba(0,255,136,0.6);
+        }
+        .btn-custom:hover { transform: translateY(-3px); box-shadow: 0 0 30px rgba(0,255,136,0.8); }
+
+        .stats {
+            display: flex; justify-content: space-around; margin-top: 25px; padding: 20px;
+            background: linear-gradient(135deg, rgba(0,0,0,0.6), rgba(0,60,120,0.4));
+            border-radius: 15px; box-shadow: 0 0 20px rgba(0,255,255,0.2);
+            border: 2px solid rgba(0,255,255,0.2);
+        }
+        .stat-item { text-align: center; }
+        .stat-value {
+            font-size: 2.2em; font-weight: bold; color: #00ffff;
+            text-shadow: 0 0 15px rgba(0,255,255,0.8);
+        }
+        .stat-label {
+            font-size: 1em; color: #00ff88; margin-top: 5px; font-weight: 600;
+            text-shadow: 0 0 10px rgba(0,255,136,0.6);
+        }
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); justify-content: center; align-items: center;
+            z-index: 1000; backdrop-filter: blur(10px);
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: linear-gradient(135deg, rgba(15,12,41,0.95), rgba(48,43,99,0.95));
+            padding: 40px; border-radius: 25px; max-width: 600px; width: 90%;
+            text-align: center; box-shadow: 0 0 50px rgba(0,255,255,0.5);
+            border: 3px solid rgba(0,255,255,0.4);
+        }
+        .modal-content h2 {
+            color: #00ffff; margin-bottom: 20px; font-size: 2.2em;
+            text-shadow: 0 0 20px rgba(0,255,255,0.8);
+        }
+        .modal-content textarea {
+            width: 100%; height: 240px; padding: 15px;
+            border: 3px solid rgba(0,255,255,0.4); border-radius: 15px;
+            font-size: 1.1em; font-family: inherit; resize: vertical;
+            background: rgba(0,0,0,0.6); color: #00ffff;
+        }
+        .modal-content textarea:focus {
+            outline: none; border-color: #00ffff;
+            box-shadow: 0 0 20px rgba(0,255,255,0.5);
+        }
+        .modal-buttons { display: flex; gap: 15px; margin-top: 25px; }
+        .celebration {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%,-50%);
+            font-size: 10em; animation: celebrate 1.5s ease-out forwards;
+            pointer-events: none; z-index: 999;
+            filter: drop-shadow(0 0 40px rgba(0,255,255,1));
+        }
+        @keyframes celebrate {
+            0%   { opacity: 0; transform: translate(-50%,-50%) scale(0) rotate(0deg); }
+            50%  { opacity: 1; transform: translate(-50%,-50%) scale(2) rotate(180deg); }
+            100% { opacity: 0; transform: translate(-50%,-50%) scale(1.5) rotate(360deg); }
+        }
+        /* 파티클 */
+        .particle {
+            position: fixed; pointer-events: none; z-index: 998;
+            font-size: 1.6em; animation: pfly 1.2s ease-out forwards;
+        }
+        @keyframes pfly {
+            0%   { opacity: 1; transform: translate(0,0) scale(1); }
+            100% { opacity: 0; transform: translate(var(--tx),var(--ty)) scale(0.3); }
+        }
+        /* 화면 플래시 */
+        .flash {
+            position: fixed; inset: 0; pointer-events: none; z-index: 997;
+            animation: flashA 0.45s ease-out forwards;
+        }
+        @keyframes flashA { 0% { opacity: 0.5; } 100% { opacity: 0; } }
+        /* 스캔라인 이펙트 (진화시) */
+        .scanline {
+            position: fixed; inset: 0; pointer-events: none; z-index: 996;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,255,0.03) 2px, rgba(0,255,255,0.03) 4px);
+            animation: scanA 0.6s ease-out forwards;
+        }
+        @keyframes scanA { 0% { opacity: 1; } 100% { opacity: 0; } }
+    </style>
+</head>
+<body>
+<div class="cyber-bg" id="cyberBg"></div>
+
+<div class="container">
+    <div class="header">
+        <h1>🤖 AI 로봇 마스터</h1>
+        <p class="subtitle">정확한 타이핑으로 최첨단 AI를 개발하세요!</p>
+    </div>
+
+    <!-- 🔊 사운드 컨트롤 바 -->
+    <div class="sound-bar">
+        <button class="snd-btn active" id="btnBGM" onclick="toggleBGM()">🎵 배경음악</button>
+        <button class="snd-btn active" id="btnSFX" onclick="toggleSFX()">🔔 효과음</button>
+        <div class="vol-wrap">
+            <label>🔊</label>
+            <input type="range" class="vol-slider" id="volSlider" min="0" max="100" value="50" oninput="setVolume(this.value)">
+        </div>
+    </div>
+
+    <div class="progress-area">
+        <div class="level-info">
+            <div class="level-badge" id="levelBadge">레벨 1</div>
+            <div class="mission-counter" id="missionCounter">미션 1/30</div>
+        </div>
+        <div class="robot-lab" id="robotLab">
+            <div class="growth-stage active" id="stage-parts">
+                <div class="robot-icon">🔧</div>
+                <div class="stage-label">부품 수집</div>
+                <div class="chip-counter" id="partsCount">0/10</div>
+            </div>
+            <div class="growth-stage" id="stage-basic">
+                <div class="robot-icon">🤖</div>
+                <div class="stage-label">기본 로봇</div>
+                <div class="chip-counter" id="basicCount">0/10</div>
+            </div>
+            <div class="growth-stage" id="stage-ai">
+                <div class="robot-icon">🦾</div>
+                <div class="stage-label">AI 로봇</div>
+                <div class="chip-counter" id="aiCount">0/10</div>
+            </div>
+            <div class="growth-stage" id="stage-drone">
+                <div class="robot-icon">🚁</div>
+                <div class="stage-label">드론 로봇</div>
+                <div class="chip-counter" id="droneCount">0/10</div>
+            </div>
+            <div class="growth-stage" id="stage-super">
+                <div class="robot-icon">🛸</div>
+                <div class="stage-label">슈퍼 AI</div>
+                <div class="chip-counter" id="superCount">0/10</div>
+            </div>
+        </div>
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="totalChips">0</div>
+                <div class="stat-label">💎 AI 칩</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="accuracy">100%</div>
+                <div class="stat-label">🎯 정확도</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="successCount">0</div>
+                <div class="stat-label">🏆 완료 미션</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="game-area">
+        <div class="mission-text" id="missionText">시작하기를 눌러주세요</div>
+        <input type="text" class="input-area" id="inputArea" placeholder="여기에 타이핑하세요" disabled>
+    </div>
+    <div class="buttons">
+        <button class="btn-next" id="btnStart">🚀 시작하기</button>
+        <button class="btn-custom" id="btnCustomMission">📝 선생님 미션</button>
+    </div>
+</div>
+
+<div class="modal" id="customModal">
+    <div class="modal-content">
+        <h2>🧑‍🏫 선생님의 특별 미션</h2>
+        <p style="color:#00ffff;margin-bottom:15px;">한 줄에 하나씩 미션을 입력해주세요 (최대 30개)</p>
+        <textarea id="customMissions" placeholder="예시:&#10;인공지능은 우리 생활을 편리하게 만듭니다&#10;코딩을 배우면 논리적 사고력이 향상됩니다&#10;로봇은 미래 산업의 핵심입니다"></textarea>
+        <div class="modal-buttons">
+            <button class="btn-next" id="btnSaveCustom">✨ 미션 시작</button>
+            <button class="btn-custom" id="btnCancelCustom">❌ 취소</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════
+   🎵 Web Audio Engine  (사이버 테마)
+═══════════════════════════════════════════ */
+let audioCtx    = null;
+let masterGain  = null;
+let bgmEnabled  = true;
+let sfxEnabled  = true;
+let masterVol   = 0.5;
+let bgmPlaying  = false;
+let bgmStop     = null;
+
+function getCtx() {
+    if (!audioCtx) {
+        audioCtx   = new (window.AudioContext || window.webkitAudioContext)();
+        masterGain = audioCtx.createGain();
+        masterGain.gain.value = masterVol;
+        masterGain.connect(audioCtx.destination);
+    }
+    return audioCtx;
+}
+
+function setVolume(v) {
+    masterVol = v / 100;
+    if (masterGain) masterGain.gain.value = masterVol;
+    if (bgmGainNode) bgmGainNode.gain.value = 0.15 * masterVol;
+}
+
+function toggleBGM() {
+    bgmEnabled = !bgmEnabled;
+    const btn = document.getElementById('btnBGM');
+    btn.classList.toggle('active', bgmEnabled);
+    btn.classList.toggle('muted', !bgmEnabled);
+    if (!bgmEnabled) stopBGM();
+    else if (gameStarted) startBGM();
+}
+function toggleSFX() {
+    sfxEnabled = !sfxEnabled;
+    const btn = document.getElementById('btnSFX');
+    btn.classList.toggle('active', sfxEnabled);
+    btn.classList.toggle('muted', !sfxEnabled);
+}
+
+/* ── BGM : 사이버 테크노 아르페지오 ── */
+let bgmGainNode = null;
+function startBGM() {
+    if (!bgmEnabled || bgmPlaying) return;
+    const ctx = getCtx();
+    bgmPlaying = true;
+
+    bgmGainNode = ctx.createGain();
+    bgmGainNode.gain.value = 0.15 * masterVol;
+    bgmGainNode.connect(masterGain);
+
+    // 딜레이 이펙트 (사이버 에코)
+    const delay  = ctx.createDelay(0.5);
+    const dGain  = ctx.createGain();
+    delay.delayTime.value = 0.25;
+    dGain.gain.value      = 0.35;
+    delay.connect(dGain);
+    dGain.connect(bgmGainNode);
+    dGain.connect(delay);
+
+    // 코드 진행: Cm - Ab - Eb - Bb (사이버/미래적)
+    const chords = [
+        [130.8, 155.6, 196.0],   // Cm
+        [103.8, 130.8, 155.6],   // Ab
+        [155.6, 196.0, 233.1],   // Eb
+        [116.5, 146.8, 174.6],   // Bb
+    ];
+    const arp  = [0, 2, 1, 2, 0, 1, 2, 0];
+    const bpm  = 128;
+    const step = 60 / bpm * 0.5;
+    const loopDur = chords.length * arp.length * step;
+    let loopTimer = null;
+
+    function loop(startT) {
+        if (!bgmPlaying) return;
+        let t = startT;
+        chords.forEach(chord => {
+            arp.forEach(ni => {
+                // 리드 사운드 (square → 사이버 느낌)
+                const osc  = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.value = chord[ni] * 4;
+                gain.gain.setValueAtTime(0, t);
+                gain.gain.linearRampToValueAtTime(0.08, t + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.001, t + step * 0.85);
+                osc.connect(gain);
+                gain.connect(bgmGainNode);
+                gain.connect(delay);
+                osc.start(t); osc.stop(t + step);
+                t += step;
+            });
+        });
+        // 베이스 (sawtooth)
+        let bt = startT;
+        chords.forEach(chord => {
+            const b  = ctx.createOscillator();
+            const bg = ctx.createGain();
+            b.type = 'sawtooth';
+            b.frequency.value = chord[0];
+            bg.gain.setValueAtTime(0, bt);
+            bg.gain.linearRampToValueAtTime(0.22, bt + 0.03);
+            bg.gain.exponentialRampToValueAtTime(0.001, bt + step * arp.length * 0.9);
+            b.connect(bg); bg.connect(bgmGainNode);
+            b.start(bt); b.stop(bt + step * arp.length);
+            bt += step * arp.length;
+        });
+        // 킥 (8분음표)
+        for (let i = 0; i < chords.length * arp.length; i += 2) {
+            const k  = ctx.createOscillator();
+            const kg = ctx.createGain();
+            k.type = 'sine';
+            const kt = startT + i * step;
+            k.frequency.setValueAtTime(100, kt);
+            k.frequency.exponentialRampToValueAtTime(30, kt + 0.18);
+            kg.gain.setValueAtTime(0.4, kt);
+            kg.gain.exponentialRampToValueAtTime(0.001, kt + 0.2);
+            k.connect(kg); kg.connect(masterGain);
+            k.start(kt); k.stop(kt + 0.22);
+        }
+        // 하이햇
+        for (let i = 0; i < chords.length * arp.length; i++) {
+            const buf = ctx.createBuffer(1, ctx.sampleRate * 0.05, ctx.sampleRate);
+            const d   = buf.getChannelData(0);
+            for (let j = 0; j < d.length; j++) d[j] = (Math.random() * 2 - 1);
+            const src  = ctx.createBufferSource();
+            const hg   = ctx.createGain();
+            const hf   = ctx.createBiquadFilter();
+            src.buffer = buf;
+            hf.type = 'highpass'; hf.frequency.value = 8000;
+            const ht = startT + i * step + step * 0.5;
+            hg.gain.setValueAtTime(0.12, ht);
+            hg.gain.exponentialRampToValueAtTime(0.001, ht + 0.04);
+            src.connect(hf); hf.connect(hg); hg.connect(masterGain);
+            src.start(ht);
+        }
+        loopTimer = setTimeout(() => { if (bgmPlaying) loop(ctx.currentTime); }, loopDur * 1000 - 60);
+    }
+    loop(ctx.currentTime + 0.05);
+    bgmStop = () => { bgmPlaying = false; clearTimeout(loopTimer); };
+}
+
+function stopBGM() {
+    bgmPlaying = false;
+    if (bgmStop) { bgmStop(); bgmStop = null; }
+}
+
+/* ── SFX ── */
+
+// 타이핑 틱 — 짧은 전자음
+function sfxTick() {
+    if (!sfxEnabled) return;
+    const ctx = getCtx();
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'square';
+    o.frequency.value = 1200 + Math.random() * 400;
+    g.gain.setValueAtTime(0.05 * masterVol, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+    o.connect(g); g.connect(masterGain);
+    o.start(); o.stop(ctx.currentTime + 0.045);
+}
+
+// 미션 성공 — 사이버 상승 4음
+function sfxSuccess() {
+    if (!sfxEnabled) return;
+    const ctx = getCtx();
+    [[523.3,0],[698.5,0.08],[880,0.16],[1174.7,0.26]].forEach(([f,d]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'triangle';
+        o.frequency.value = f;
+        const t = ctx.currentTime + d;
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.3 * masterVol, t + 0.015);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+        o.connect(g); g.connect(masterGain);
+        o.start(t); o.stop(t + 0.22);
+    });
+}
+
+// 틀렸을 때 — 전기 지직음
+function sfxWrong() {
+    if (!sfxEnabled) return;
+    const ctx = getCtx();
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(300, ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.25);
+    g.gain.setValueAtTime(0.28 * masterVol, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.28);
+    // 노이즈 레이어
+    const buf = ctx.createBuffer(1, ctx.sampleRate * 0.15, ctx.sampleRate);
+    const d   = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/d.length, 1.5);
+    const src = ctx.createBufferSource(), ng = ctx.createGain();
+    src.buffer = buf;
+    ng.gain.value = 0.15 * masterVol;
+    src.connect(ng); ng.connect(masterGain); src.start();
+    o.connect(g); g.connect(masterGain);
+    o.start(); o.stop(ctx.currentTime + 0.3);
+}
+
+// 로봇 진화 — 파워업 사이버 팡파레
+function sfxEvolve() {
+    if (!sfxEnabled) return;
+    const ctx = getCtx();
+    // 상승 스윕
+    const sweep = ctx.createOscillator(), sg = ctx.createGain();
+    sweep.type = 'sawtooth';
+    sweep.frequency.setValueAtTime(200, ctx.currentTime);
+    sweep.frequency.exponentialRampToValueAtTime(1600, ctx.currentTime + 0.7);
+    sg.gain.setValueAtTime(0.2 * masterVol, ctx.currentTime);
+    sg.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.75);
+    sweep.connect(sg); sg.connect(masterGain);
+    sweep.start(); sweep.stop(ctx.currentTime + 0.78);
+    // 화음
+    [[523.3,0.4],[659.3,0.5],[783.9,0.6],[1046.5,0.72]].forEach(([f,d]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'square';
+        o.frequency.value = f;
+        const t = ctx.currentTime + d;
+        g.gain.setValueAtTime(0.25 * masterVol, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+        o.connect(g); g.connect(masterGain);
+        o.start(t); o.stop(t + 0.38);
+    });
+    // 킥
+    const k = ctx.createOscillator(), kg = ctx.createGain();
+    k.type = 'sine';
+    k.frequency.setValueAtTime(180, ctx.currentTime + 0.72);
+    k.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 1.0);
+    kg.gain.setValueAtTime(0.5 * masterVol, ctx.currentTime + 0.72);
+    kg.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.05);
+    k.connect(kg); kg.connect(masterGain);
+    k.start(ctx.currentTime + 0.72); k.stop(ctx.currentTime + 1.1);
+}
+
+// 레벨 클리어 — 전자 팡파레
+function sfxLevelUp() {
+    if (!sfxEnabled) return;
+    const ctx = getCtx();
+    [[392,0],[493.9,0.1],[587.3,0.2],[783.9,0.32],[987.8,0.46],[1174.7,0.6],[1568,0.78]].forEach(([f,d]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'triangle';
+        o.frequency.value = f;
+        const t = ctx.currentTime + d;
+        g.gain.setValueAtTime(0.35 * masterVol, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+        o.connect(g); g.connect(masterGain);
+        o.start(t); o.stop(t + 0.32);
+    });
+}
+
+// 전체 완료 — 웅장한 최종 사이버 승리음
+function sfxComplete() {
+    if (!sfxEnabled) return;
+    const ctx = getCtx();
+    stopBGM();
+    // 화음 레이어 3개
+    const fanfare = [
+        [[261.6,329.6,392],0,0.6],
+        [[349.2,440,523.3],0.65,0.6],
+        [[523.3,659.3,783.9],1.3,0.6],
+        [[783.9,987.8,1174.7],2.0,0.9],
+        [[1046.5,1318.5,1568],2.95,1.3],
+    ];
+    fanfare.forEach(([freqs,delay,dur]) => {
+        freqs.forEach(f => {
+            const o = ctx.createOscillator(), g = ctx.createGain();
+            o.type = 'square';
+            o.frequency.value = f;
+            const t = ctx.currentTime + delay;
+            g.gain.setValueAtTime(0, t);
+            g.gain.linearRampToValueAtTime(0.18 * masterVol, t + 0.04);
+            g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+            o.connect(g); g.connect(masterGain);
+            o.start(t); o.stop(t + dur + 0.1);
+        });
+    });
+    // 리드 멜로디
+    [[523.3,0],[659.3,0.18],[783.9,0.36],[1046.5,0.55],[1318.5,0.75],[1568,0.95],[2093,1.2]].forEach(([f,d]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'triangle';
+        o.frequency.value = f;
+        const t = ctx.currentTime + d;
+        g.gain.setValueAtTime(0.3 * masterVol, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+        o.connect(g); g.connect(masterGain);
+        o.start(t); o.stop(t + 0.35);
+    });
+    // 킥 드럼 4박
+    [0,0.65,1.3,2.0,2.65].forEach(d => {
+        const k = ctx.createOscillator(), kg = ctx.createGain();
+        k.type = 'sine';
+        k.frequency.setValueAtTime(140, ctx.currentTime + d);
+        k.frequency.exponentialRampToValueAtTime(35, ctx.currentTime + d + 0.22);
+        kg.gain.setValueAtTime(0.45 * masterVol, ctx.currentTime + d);
+        kg.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + d + 0.28);
+        k.connect(kg); kg.connect(masterGain);
+        k.start(ctx.currentTime + d); k.stop(ctx.currentTime + d + 0.3);
+    });
+}
+
+/* ── 파티클 & 이펙트 ── */
+function spawnParticles(emojis) {
+    const cx = window.innerWidth/2, cy = window.innerHeight/2;
+    emojis.forEach((em, i) => {
+        const el = document.createElement('div');
+        el.className = 'particle';
+        el.textContent = em;
+        const angle = (Math.PI*2/emojis.length)*i;
+        const dist  = 110 + Math.random()*90;
+        el.style.left = cx+'px'; el.style.top = cy+'px';
+        el.style.setProperty('--tx', Math.cos(angle)*dist+'px');
+        el.style.setProperty('--ty', Math.sin(angle)*dist - 50+'px');
+        el.style.animationDelay = (Math.random()*0.12)+'s';
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 1400);
+    });
+}
+function flashScreen(color) {
+    const el = document.createElement('div');
+    el.className = 'flash'; el.style.background = color;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 500);
+}
+function scanEffect() {
+    const el = document.createElement('div');
+    el.className = 'scanline';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 700);
+}
+
+/* ═══════════════════════════════════════════
+   게임 데이터 (원본 그대로 유지)
+═══════════════════════════════════════════ */
+const levelMissions = [
+    ["ㄱㄴㄷㄹㅁ","ㅂㅅㅇㅈㅊ","ㅋㅌㅍㅎ","ㅏㅑㅓㅕ","ㅗㅛㅜㅠ","ㅡㅣㅐㅔ","가나다라마","바사아자차","카타파하","고노도로모",
+     "부수우주추","키티피히","게네데레메","배새애재채","코토포호","구누두루무","기니디리미","교뇨됴료묘","규뉴듀류뮤","귀뉘뒤뤼뮈",
+     "개내대래매","괴뇌되뢰뫼","과나다라마","봐놔돠롸뫄","궤눼됴뤠뭬","긔늬듸릐믜","외뇌되","왜내대","귀뉘뒤","의희"],
+    ["과학","실험","관찰","탐구","발견","발명","연구","분석","측정","기록",
+     "가설","결론","증명","법칙","이론","원리","현상","물질","에너지","힘",
+     "운동","속력","질량","부피","온도","압력","전기","자석","빛","소리"],
+    ["물의 순환","태양계","지구의 자전","계절의 변화","날씨의 변화","식물의 구조","동물의 분류","생태계","먹이사슬","환경보호",
+     "에너지 전환","전기회로","자석의 성질","빛의 직진","그림자","거울","렌즈","소리의 전달","진동","파동",
+     "물질의 상태","용해","혼합물","화합물","산과 염기","연소","산화","화학반응","원소","주기율표"],
+    ["과학적 사고력을 기르자","실험을 통해 배우는 과학","관찰과 탐구의 중요성","가설을 세우고 검증하기","결과를 분석하고 정리하기",
+     "지구는 둥글다는 증거","태양계의 행성들","달의 모양이 변하는 이유","계절이 생기는 원리","낮과 밤이 생기는 이유",
+     "식물은 어떻게 자랄까","광합성의 원리","뿌리의 역할","줄기의 역할","잎의 역할",
+     "동물의 특징과 분류","포유류의 특징","조류의 특징","어류의 특징","곤충의 특징",
+     "생태계의 구성요소","생산자와 소비자","분해자의 역할","먹이 피라미드","생태계 평형",
+     "에너지는 전환된다","전기 에너지","빛 에너지","열 에너지","소리 에너지"],
+    ["컴퓨터","프로그래밍","코딩","알고리즘","데이터","소프트웨어","하드웨어","인터넷","네트워크","클라우드",
+     "인공지능","로봇","자동화","센서","입력","출력","처리","저장","통신","보안",
+     "암호","해킹","바이러스","방화벽","백업","업데이트","운영체제","애플리케이션","웹","앱"],
+    ["컴퓨터의 구성요소","중앙처리장치","기억장치","입출력장치","프로그램 작성하기","순차 구조","반복 구조","조건 구조","변수와 상수","함수",
+     "알고리즘 설계하기","문제 해결 과정","순서도 그리기","디버깅하기","효율적인 알고리즘","정렬 알고리즘","검색 알고리즘","재귀 함수","자료구조","배열"],
+    ["인공지능은 우리 생활을 편리하게 만듭니다","코딩을 배우면 논리적 사고력이 향상됩니다","로봇은 미래 산업의 핵심입니다","빅데이터 분석으로 패턴을 찾습니다","사물인터넷으로 모든 것이 연결됩니다",
+     "가상현실은 새로운 경험을 제공합니다","증강현실은 현실과 디지털을 융합합니다","블록체인은 안전한 거래를 가능하게 합니다","양자컴퓨터는 슈퍼컴퓨터를 넘어섭니다","자율주행차는 교통사고를 줄입니다",
+     "드론은 다양한 분야에서 활용됩니다","3D프린터로 원하는 물건을 만듭니다","생체인식 기술로 보안이 강화됩니다","음성인식 비서가 일상을 도와줍니다","번역기술이 언어장벽을 없앱니다",
+     "스마트홈으로 편리한 생활을 합니다","웨어러블 기기로 건강을 관리합니다","전자상거래로 쇼핑이 편해졌습니다","온라인 교육으로 언제 어디서나 배웁니다","화상회의로 멀리 있어도 만납니다",
+     "클라우드 컴퓨팅으로 데이터를 저장합니다","사이버 보안이 중요해지고 있습니다","개인정보 보호에 신경써야 합니다","디지털 시민의식을 가져야 합니다","올바른 인터넷 사용 습관이 필요합니다",
+     "정보를 비판적으로 평가해야 합니다","가짜뉴스를 구별할 수 있어야 합니다","저작권을 존중해야 합니다","네티켓을 지켜야 합니다","디지털 기술을 윤리적으로 사용합시다"],
+    ["민주주의","헌법","국회","정부","법원","권리","의무","선거","투표","정책",
+     "경제","생산","소비","교환","시장","가격","수요","공급","무역","세금",
+     "역사","문화","전통","유산","독립","평화","통일","세계","지구촌","다문화"],
+    ["대한민국은 민주공화국입니다","국민은 주권을 가지고 있습니다","삼권분립의 원리를 따릅니다","기본권을 보장받습니다","의무를 성실히 이행해야 합니다",
+     "선거를 통해 대표를 선출합니다","공정한 선거가 중요합니다","국회는 법을 만듭니다","정부는 나라를 운영합니다","법원은 법을 해석하고 적용합니다",
+     "지방자치제도가 시행됩니다","시민참여가 민주주의를 발전시킵니다","인권을 존중해야 합니다","평등한 사회를 만들어야 합니다","차별을 없애야 합니다",
+     "경제활동은 생산 소비 교환입니다","합리적으로 소비해야 합니다","저축의 중요성을 알아야 합니다","일을 하고 보수를 받습니다","세금은 공공서비스를 위해 냅니다",
+     "우리나라의 역사를 배웁니다","문화유산을 보존해야 합니다","전통문화를 계승 발전시킵니다","독립운동의 정신을 기억합니다","평화통일을 염원합니다",
+     "세계 여러 나라와 교류합니다","국제사회에서 책임을 다합니다","다문화 사회를 이해합니다","서로 다름을 존중합니다","함께 살아가는 지혜가 필요합니다"],
+    ["우리나라의 민주주의 발전 과정을 이해하고 계승해야 합니다","헌법은 국가의 최고 법으로 모든 국민이 지켜야 합니다","국민의 권리와 의무는 균형을 이루어야 합니다","지방자치는 풀뿌리 민주주의의 실천입니다","시민참여를 통해 더 나은 사회를 만들 수 있습니다",
+     "경제는 우리 생활과 밀접한 관련이 있습니다","합리적인 선택이 경제생활의 기본입니다","자원은 한정되어 있으므로 효율적으로 사용해야 합니다","시장경제에서는 수요와 공급으로 가격이 결정됩니다","무역을 통해 서로 필요한 물건을 교환합니다",
+     "역사를 배우면 현재를 이해하고 미래를 준비할 수 있습니다","우리 조상들의 지혜와 문화를 계승해야 합니다","독립을 위해 희생하신 분들을 기억해야 합니다","평화통일을 위해 노력해야 합니다","세계 여러 나라와 협력하며 살아갑니다",
+     "다양한 문화를 존중하고 이해하는 태도가 필요합니다","편견과 차별을 없애고 평등한 사회를 만들어야 합니다","인권은 모든 사람이 가지는 기본적인 권리입니다","환경을 보호하는 것은 우리 모두의 책임입니다","지속가능한 발전을 위해 노력해야 합니다",
+     "정보화 사회에서 올바르게 정보를 활용해야 합니다","비판적으로 생각하고 합리적으로 판단해야 합니다","서로 배려하고 협력하는 자세가 중요합니다","공동체 의식을 가지고 함께 살아가야 합니다","더 나은 미래를 위해 오늘 최선을 다해야 합니다",
+     "글로벌 시대에 세계 시민으로서의 책임을 다해야 합니다","문화의 다양성을 인정하고 존중해야 합니다","평화로운 세상을 만들기 위해 노력해야 합니다","지구촌 문제에 관심을 가지고 함께 해결해야 합니다","미래 세대를 위한 지속가능한 사회를 만들어야 합니다"]
+];
+
+/* ── 게임 상태 ── */
+let currentLevel=0, currentMission=0, totalChips=0, robotStage=0;
+let stageChips=[0,0,0,0,0], correctCount=0, totalAttempts=0;
+let isCustomMode=false, customMissionList=[], gameStarted=false, wrongFired=false;
+
+const inputArea      = document.getElementById('inputArea');
+const missionText    = document.getElementById('missionText');
+const levelBadge     = document.getElementById('levelBadge');
+const missionCounter = document.getElementById('missionCounter');
+const btnStart       = document.getElementById('btnStart');
+const customModal    = document.getElementById('customModal');
+const btnSaveCustom  = document.getElementById('btnSaveCustom');
+const btnCancelCustom= document.getElementById('btnCancelCustom');
+const customMissions = document.getElementById('customMissions');
+
+function getCurrentMission() {
+    return isCustomMode ? (customMissionList[currentMission]||'완료!') : levelMissions[currentLevel][currentMission];
+}
+
+function startGame() {
+    getCtx(); // AudioContext 유저 인터랙션으로 활성화
+    gameStarted = true;
+    inputArea.disabled = false;
+    inputArea.value = '';
+    inputArea.focus();
+    btnStart.textContent = '⏭️ 다음 문제';
+    updateMissionDisplay();
+    if (bgmEnabled) startBGM();
+}
+
+function updateMissionDisplay() {
+    missionText.textContent = getCurrentMission();
+    if (isCustomMode) {
+        levelBadge.textContent   = '🧑‍🏫 선생님 미션';
+        missionCounter.textContent = `미션 ${currentMission+1}/${customMissionList.length}`;
+    } else {
+        levelBadge.textContent   = `레벨 ${currentLevel+1}`;
+        missionCounter.textContent = `미션 ${currentMission+1}/30`;
+    }
+}
+
+function updateGrowthStage() {
+    ['parts','basic','ai','drone','super'].forEach(s =>
+        document.getElementById(`stage-${s}`).classList.remove('active')
+    );
+    document.getElementById(`stage-${['parts','basic','ai','drone','super'][robotStage]}`).classList.add('active');
+    document.getElementById('partsCount').textContent = `${stageChips[0]}/10`;
+    document.getElementById('basicCount').textContent = `${stageChips[1]}/10`;
+    document.getElementById('aiCount').textContent    = `${stageChips[2]}/10`;
+    document.getElementById('droneCount').textContent = `${stageChips[3]}/10`;
+    document.getElementById('superCount').textContent = `${stageChips[4]}/10`;
+    document.getElementById('totalChips').textContent = totalChips;
+    document.getElementById('successCount').textContent = correctCount;
+    if (totalAttempts > 0)
+        document.getElementById('accuracy').textContent = `${Math.round(correctCount/totalAttempts*100)}%`;
+}
+
+function showCelebration(emoji) {
+    const el = document.createElement('div');
+    el.className = 'celebration'; el.textContent = emoji;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1600);
+}
+
+function addChip() {
+    totalChips++;
+    stageChips[robotStage]++;
+    if (stageChips[robotStage] >= 10) {
+        stageChips[robotStage] = 0;
+        if (robotStage < 4) {
+            robotStage++;
+            const icons = ['✨','🤖','🦾','🚁','🛸'];
+            showCelebration(icons[robotStage]);
+            spawnParticles(['⚡','💎','🔵','🟢','🤖','✨','🛸','💡']);
+            flashScreen('rgba(0,255,255,0.2)');
+            scanEffect();
+            sfxEvolve();
+            const msgs = ['','⚡ 기본 로봇 조립 완료!','🧠 AI 시스템 업그레이드!','🚀 드론 로봇으로 진화!','👑 슈퍼 AI 개발 성공!'];
+            if (msgs[robotStage]) setTimeout(() => alert(msgs[robotStage]), 600);
+        } else {
+            showCelebration('🏆💎⚡');
+            spawnParticles(['🏆','💎','⚡','🛸','🤖','✨','🌟','💫','🎊','👑']);
+            flashScreen('rgba(0,255,255,0.35)');
+            scanEffect();
+            sfxComplete();
+        }
+    }
+    updateGrowthStage();
+}
+
+inputArea.addEventListener('input', function() {
+    const typed  = this.value;
+    const target = getCurrentMission();
+    if (typed === target) {
+        this.classList.remove('wrong'); this.classList.add('correct');
+        totalAttempts++; correctCount++; wrongFired = false;
+        sfxSuccess();
+        spawnParticles(['⚡','💡','🔵','✨','💎','🤖']);
+        addChip();
+        setTimeout(() => nextMission(), 600);
+    } else if (target.startsWith(typed)) {
+        this.classList.remove('wrong','correct');
+        if (typed.length > 0) sfxTick();
+        wrongFired = false;
+    } else {
+        this.classList.add('wrong'); this.classList.remove('correct');
+        if (!wrongFired) { sfxWrong(); totalAttempts++; wrongFired = true; updateGrowthStage(); }
+    }
+});
+
+function nextMission() {
+    inputArea.value = ''; inputArea.classList.remove('correct','wrong');
+    wrongFired = false;
+    const maxM = isCustomMode ? customMissionList.length : 30;
+    currentMission++;
+    if (currentMission >= maxM) {
+        if (isCustomMode) {
+            sfxLevelUp();
+            spawnParticles(['🎊','🎉','✨','🌟','💫','🏆','🎀','🎁']);
+            flashScreen('rgba(0,255,255,0.2)');
+            setTimeout(() => { alert('🎊 선생님 미션 완료! 대단해요!'); resetGame(); }, 400);
+        } else if (currentLevel < levelMissions.length - 1) {
+            sfxLevelUp();
+            spawnParticles(['⭐','🌟','✨','💫','⚡','🤖','🏆']);
+            flashScreen('rgba(0,255,255,0.2)');
+            setTimeout(() => {
+                alert(`⭐ 레벨 ${currentLevel+1} 클리어!`);
+                currentLevel++; currentMission = 0; updateMissionDisplay();
+            }, 400);
+        } else {
+            sfxComplete();
+            spawnParticles(['👑','💎','🏆','⚡','🛸','✨','🌟','⭐','💫','🎊','🎉','🤖']);
+            flashScreen('rgba(0,255,255,0.4)');
+            scanEffect();
+            setTimeout(() => { alert('🏆 전체 완료! 당신은 진정한 AI 마스터!'); resetGame(); }, 600);
+        }
+    } else {
+        updateMissionDisplay();
+    }
+    inputArea.focus();
+}
+
+function resetGame() {
+    currentLevel=0; currentMission=0; isCustomMode=false; gameStarted=false;
+    inputArea.disabled=true; inputArea.value='';
+    btnStart.textContent='🚀 시작하기';
+    missionText.textContent='시작하기를 눌러주세요';
+    stopBGM();
+    updateMissionDisplay();
+}
+
+btnStart.addEventListener('click', () => gameStarted ? nextMission() : startGame());
+document.getElementById('btnCustomMission').addEventListener('click', () => {
+    customModal.classList.add('active');
+    customMissions.value = ''; customMissions.focus();
+});
+btnSaveCustom.addEventListener('click', () => {
+    const lines = customMissions.value.trim().split('\n').filter(l=>l.trim());
+    if (!lines.length) return alert('⚠️ 최소 1개 입력!');
+    if (lines.length > 30) return alert('⚠️ 최대 30개까지!');
+    customMissionList = lines; isCustomMode = true; currentMission = 0;
+    customModal.classList.remove('active');
+    startGame();
+});
+btnCancelCustom.addEventListener('click', () => customModal.classList.remove('active'));
+customModal.addEventListener('click', e => { if (e.target===customModal) customModal.classList.remove('active'); });
+inputArea.addEventListener('keypress', e => { if (e.key==='Enter' && inputArea.classList.contains('correct')) nextMission(); });
+
+/* ── 사이버 배경 생성 ── */
+function createCyberBackground() {
+    const bg = document.getElementById('cyberBg');
+    for (let i=0; i<15; i++) {
+        const c = document.createElement('div'); c.className = 'circuit';
+        c.style.left = Math.random()*100+'%';
+        c.style.width = (Math.random()*200+100)+'px'; c.style.height = '2px';
+        c.style.animationDelay = Math.random()*10+'s';
+        bg.appendChild(c);
+    }
+    for (let i=0; i<50; i++) {
+        const p = document.createElement('div'); p.className = 'neon-particle';
+        p.style.left = Math.random()*100+'%'; p.style.top = Math.random()*100+'%';
+        p.style.animationDelay = Math.random()*4+'s';
+        bg.appendChild(p);
+    }
+}
+
+createCyberBackground();
+updateGrowthStage();
+</script>
+</body>
+</html>
