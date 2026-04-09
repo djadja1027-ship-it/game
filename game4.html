@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🐔 닭 키우기 한글 타자</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Malgun Gothic',sans-serif;background:linear-gradient(135deg,#a8edea 0%,#fed6e3 100%);min-height:100vh;display:flex;justify-content:center;align-items:flex-start;padding:20px;}
+
+/* ── 사운드/TTS 컨트롤 ── */
+.top-controls{position:fixed;top:14px;right:14px;display:flex;flex-direction:column;gap:8px;z-index:1000;}
+.ctrl-row{display:flex;gap:8px;}
+.ctrl-btn{padding:10px 16px;border:none;border-radius:20px;font-size:1em;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s;box-shadow:0 3px 10px rgba(0,0,0,0.15);}
+.ctrl-btn:hover{transform:translateY(-2px);}
+.btn-tts{background:linear-gradient(135deg,#667eea,#764ba2);color:white;}
+.btn-tts.off{background:linear-gradient(135deg,#aaa,#888);color:white;}
+.btn-speed{background:linear-gradient(135deg,#4ecdc4,#44a08d);color:white;}
+.btn-sfx{background:linear-gradient(135deg,#ff6b6b,#ffa502);color:white;}
+.btn-sfx.off{background:linear-gradient(135deg,#aaa,#888);}
+
+.container{background:white;border-radius:30px;padding:36px;max-width:960px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.18);border:4px solid #ffd700;margin-top:8px;}
+.header{text-align:center;margin-bottom:24px;}
+.header h1{font-size:2.8em;color:#ff6b6b;margin-bottom:8px;}
+.subtitle{font-size:1.2em;color:#888;}
+
+/* ── 커리큘럼 맵 ── */
+.cur-section{margin-bottom:10px;}
+.cur-cat{font-size:12px;font-weight:bold;color:#ff6b6b;margin-bottom:6px;padding-left:2px;}
+.cur-grid{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:6px;}
+.cur-btn{padding:8px 12px;border-radius:10px;font-size:13px;font-weight:bold;cursor:pointer;font-family:inherit;border:2px solid transparent;transition:all 0.15s;}
+.cur-btn.done{background:#EAF3DE;color:#3B6D11;border-color:#97C459;}
+.cur-btn.current{background:#ff6b6b;color:#fff;border-color:#ee5a24;transform:scale(1.06);}
+.cur-btn.locked{background:#f5f5f5;color:#ccc;border-color:#eee;cursor:default;}
+.cur-btn.unlocked{background:#fff5e6;color:#ff6b6b;border-color:#ffccaa;}
+.cur-btn.unlocked:hover{background:#ffe6cc;}
+
+/* ── 레벨 정보 ── */
+.level-info{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;background:linear-gradient(135deg,#fff5e6,#ffe6f0);padding:16px 20px;border-radius:14px;}
+.level-badge{background:linear-gradient(135deg,#ff6b6b,#ffa502);color:white;padding:10px 24px;border-radius:40px;font-size:1.3em;font-weight:bold;box-shadow:0 4px 14px rgba(255,107,107,0.4);}
+.level-name-tag{font-size:1.1em;font-weight:bold;color:#ff6b6b;background:white;padding:10px 18px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.08);}
+.mission-counter{font-size:1.3em;color:#333;font-weight:bold;background:white;padding:10px 22px;border-radius:18px;box-shadow:0 2px 8px rgba(0,0,0,0.08);}
+
+/* ── 농장 ── */
+.farm-area{background:linear-gradient(to bottom,#87CEEB 0%,#98D8C8 100%);border-radius:20px;padding:36px 18px;margin-bottom:22px;min-height:270px;display:flex;justify-content:space-around;align-items:flex-end;position:relative;border:4px solid #8B4513;}
+.farm-area::before{content:'🏡';position:absolute;font-size:7em;opacity:0.13;left:50%;bottom:-18px;transform:translateX(-50%);}
+.farm-area::after{content:'';position:absolute;bottom:0;left:0;right:0;height:55px;background:linear-gradient(to top,rgba(139,69,19,0.25),transparent);}
+.growth-stage{text-align:center;transition:all 0.5s ease;position:relative;z-index:2;filter:brightness(0.7) grayscale(0.5);}
+.growth-stage.active{transform:scale(1.35);filter:brightness(1.2) grayscale(0);}
+.animal-icon{font-size:5.5em;margin-bottom:8px;animation:floatA 3s ease-in-out infinite;filter:drop-shadow(0 0 8px rgba(255,215,0,0.4));}
+@keyframes floatA{0%,100%{transform:translateY(0);}50%{transform:translateY(-14px);}}
+.growth-stage.active .animal-icon{animation:floatA 1s ease-in-out infinite,glowA 1.5s infinite;}
+@keyframes glowA{0%,100%{filter:drop-shadow(0 0 18px rgba(255,215,0,0.8));}50%{filter:drop-shadow(0 0 36px rgba(255,165,0,1));}}
+.stage-label{font-weight:bold;color:white;background:linear-gradient(135deg,#ff6b6b,#ffa502);padding:8px 16px;border-radius:14px;font-size:1.1em;box-shadow:0 4px 10px rgba(0,0,0,0.25);border:2px solid #fff;}
+.egg-counter{font-size:1.2em;color:#ffd700;margin-top:6px;font-weight:bold;text-shadow:0 2px 4px rgba(0,0,0,0.3);}
+
+/* ── 사이클 진행바 (알 20개) ── */
+.cycle-wrap{background:linear-gradient(135deg,#fff5e6,#ffe6f0);border-radius:14px;padding:14px 18px;margin-bottom:18px;}
+.cycle-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.cycle-label{font-size:1em;font-weight:bold;color:#ff6b6b;}
+.cycle-stage-badge{font-size:0.9em;font-weight:bold;padding:4px 12px;border-radius:99px;}
+.csb-egg  {background:#FAEEDA;color:#854F0B;}
+.csb-chick{background:#EAF3DE;color:#3B6D11;}
+.csb-mid  {background:#E1F5EE;color:#0F6E56;}
+.csb-hen  {background:#EEEDFE;color:#534AB7;}
+.cycle-eggs{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;}
+.cegg{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;background:#fff9f0;border:2px solid #FFE5A0;transition:all 0.25s;}
+.cegg.filled{background:#FAEEDA;border-color:#EF9F27;animation:popIn 0.35s;}
+@keyframes popIn{0%{transform:scale(0);}70%{transform:scale(1.25);}100%{transform:scale(1);}}
+.cycle-bar-out{background:#FFE5A0;border-radius:99px;height:10px;overflow:hidden;}
+.cycle-bar-in{height:100%;border-radius:99px;background:linear-gradient(90deg,#ff6b6b,#ffa502);transition:width 0.35s;}
+
+/* ── 미션 진행 ── */
+.mission-prog{background:#f5f5f5;border-radius:12px;padding:10px 16px;margin-bottom:16px;}
+.mp-row{display:flex;justify-content:space-between;margin-bottom:5px;}
+.mp-label{font-size:12px;font-weight:bold;color:#888;}
+.mp-count{font-size:12px;font-weight:bold;color:#ff6b6b;}
+.mp-bar{background:#e0e0e0;border-radius:99px;height:8px;overflow:hidden;}
+.mp-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#ff6b6b,#ffa502);transition:width 0.3s;}
+
+/* ── 닭장 ── */
+.coop-card{background:white;border-radius:18px;border:3px solid #FFE5A0;padding:16px 18px;margin-bottom:18px;}
+.coop-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.coop-title{font-size:1.1em;font-weight:bold;color:#ff6b6b;}
+.coop-count{font-size:0.9em;font-weight:bold;background:#FAEEDA;color:#854F0B;padding:4px 12px;border-radius:99px;}
+.coop-sub{font-size:0.85em;color:#aaa;margin-bottom:10px;}
+.coop-grid{display:flex;flex-wrap:wrap;gap:6px;}
+.coop-slot{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px;background:#fff9f0;border:2px solid #FFE5A0;}
+.coop-slot.filled{background:#FAEEDA;border-color:#EF9F27;animation:popIn 0.4s;}
+.coop-slot.just-added{animation:bigPop 0.5s;}
+@keyframes bigPop{0%{transform:scale(0) rotate(-10deg);}70%{transform:scale(1.3) rotate(5deg);}100%{transform:scale(1) rotate(0);}};
+
+/* ── 통계 ── */
+.stats{display:flex;justify-content:space-around;padding:16px;background:linear-gradient(135deg,#fff5e6,#ffe6f0);border-radius:14px;margin-bottom:18px;}
+.stat-item{text-align:center;}
+.stat-value{font-size:2.2em;font-weight:bold;background:linear-gradient(135deg,#ff6b6b,#ffa502);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.stat-label{font-size:1em;color:#888;margin-top:4px;font-weight:600;}
+
+/* ── 게임 영역 ── */
+.game-area{background:white;border:4px solid #ffa502;border-radius:14px;padding:26px;margin-bottom:18px;}
+
+/* 문제 표시 + TTS 버튼 */
+.mission-box{position:relative;background:#fff5e6;border:3px dashed #ffa502;border-radius:14px;padding:24px 60px 24px 24px;margin-bottom:18px;text-align:center;}
+.mission-word{font-size:3em;font-weight:bold;color:#ff6b6b;letter-spacing:4px;line-height:1.3;}
+.mission-word.sentence{font-size:1.8em;letter-spacing:1px;}
+.speak-btn{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:1.8em;cursor:pointer;background:none;border:none;animation:speakerPulse 1.8s infinite;padding:4px;}
+@keyframes speakerPulse{0%,100%{transform:translateY(-50%) scale(1);}50%{transform:translateY(-50%) scale(1.2);}}
+.speak-btn.speaking{color:#ff6b6b;animation:none;}
+
+/* 글자별 색상 피드백 */
+.ch-correct{color:#4caf50;}
+.ch-wrong{color:#f44336;text-decoration:underline;}
+.ch-current{border-bottom:4px solid #ff6b6b;color:#333;padding-bottom:2px;}
+.ch-pending{color:#ccc;}
+
+#inputArea{width:100%;font-size:2.2em;padding:20px;border:4px solid #ddd;border-radius:14px;text-align:center;font-family:inherit;transition:all 0.3s;background:#fffef7;}
+#inputArea:focus{outline:none;border-color:#ff6b6b;background:white;box-shadow:0 0 22px rgba(255,107,107,0.35);}
+#inputArea.correct{border-color:#4CAF50;background:#e8f5e9;animation:successAnim 0.5s ease;}
+@keyframes successAnim{0%,100%{transform:scale(1);}50%{transform:scale(1.02);}}
+#inputArea.wrong{border-color:#f44336;background:#ffebee;animation:shakeAnim 0.5s;}
+@keyframes shakeAnim{0%,100%{transform:translateX(0);}25%{transform:translateX(-14px);}75%{transform:translateX(14px);}}
+.feedback-msg{text-align:center;font-size:1.3em;font-weight:bold;min-height:28px;margin-top:10px;}
+.feedback-msg.good{color:#4caf50;}
+.feedback-msg.bad{color:#f44336;}
+.skip-btn{display:block;width:100%;margin-top:12px;padding:14px;background:#fff5e6;border:3px solid #ffa502;border-radius:12px;font-size:1.1em;font-weight:bold;color:#ff6b6b;cursor:pointer;font-family:inherit;transition:background 0.15s;}
+.skip-btn:hover{background:#ffe6cc;}
+
+.buttons{display:flex;gap:12px;margin-top:16px;}
+button.btn-next{flex:1;padding:18px;font-size:1.3em;border:none;border-radius:14px;cursor:pointer;font-weight:bold;transition:all 0.3s;background:linear-gradient(135deg,#ff6b6b,#ffa502);color:white;box-shadow:0 5px 18px rgba(255,107,107,0.4);font-family:inherit;}
+button.btn-next:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(255,107,107,0.6);}
+button.btn-custom{flex:1;padding:18px;font-size:1.3em;border:none;border-radius:14px;cursor:pointer;font-weight:bold;transition:all 0.3s;background:linear-gradient(135deg,#f093fb,#f5576c);color:white;box-shadow:0 5px 18px rgba(245,87,108,0.4);font-family:inherit;}
+button.btn-custom:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(245,87,108,0.6);}
+
+/* ── 모달 ── */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);justify-content:center;align-items:center;z-index:2000;}
+.modal.active{display:flex;}
+.modal-content{background:white;padding:36px;border-radius:20px;max-width:500px;width:90%;text-align:center;}
+.modal-content h2{color:#ff6b6b;margin-bottom:16px;font-size:1.8em;}
+.modal-content textarea{width:100%;height:200px;padding:14px;border:2px solid #ddd;border-radius:10px;font-size:1.1em;font-family:inherit;resize:vertical;}
+.modal-buttons{display:flex;gap:10px;margin-top:18px;}
+
+/* ── 팝업 오버레이 ── */
+.burst-overlay{display:none;position:fixed;inset:0;align-items:center;justify-content:center;background:rgba(255,107,107,0.35);z-index:999;}
+.burst-box{background:white;border-radius:28px;border:4px solid #ffd700;padding:36px 44px;text-align:center;margin:20px;animation:popIn 0.4s;}
+.burst-emoji{font-size:72px;display:block;margin-bottom:12px;animation:bigBounce 0.6s infinite alternate;}
+@keyframes bigBounce{from{transform:translateY(0) scale(1);}to{transform:translateY(-12px) scale(1.08);}}
+.burst-title{font-size:2em;font-weight:900;color:#ff6b6b;margin-bottom:6px;}
+.burst-sub{font-size:1.1em;color:#888;font-weight:bold;margin-bottom:18px;white-space:pre-line;line-height:1.7;}
+.btn-continue{padding:16px 40px;background:linear-gradient(135deg,#ff6b6b,#ffa502);color:white;border:none;border-radius:18px;font-size:1.3em;font-weight:bold;cursor:pointer;font-family:inherit;}
+.btn-continue:hover{background:linear-gradient(135deg,#ffa502,#ff6b6b);}
+
+/* ── 완료 ── */
+.done-wrap{text-align:center;padding:2rem 1rem;}
+.done-big{font-size:64px;display:block;margin-bottom:14px;animation:bigBounce 0.8s infinite alternate;}
+.done-txt{font-size:1.5em;font-weight:bold;color:#ff6b6b;line-height:1.6;}
+.btn-restart{margin-top:18px;padding:14px 32px;background:linear-gradient(135deg,#ff6b6b,#ffa502);color:white;border:none;border-radius:16px;font-size:1.2em;font-weight:bold;cursor:pointer;font-family:inherit;}
+
+/* ── 파티클 ── */
+.particle{position:fixed;pointer-events:none;z-index:998;font-size:1.6em;animation:pfly 1.2s ease-out forwards;}
+@keyframes pfly{0%{opacity:1;transform:translate(0,0) scale(1);}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0.2);}}
+.firework{position:fixed;width:5px;height:5px;border-radius:50%;pointer-events:none;z-index:9999;animation:fw 1s ease-out forwards;}
+@keyframes fw{0%{opacity:1;transform:translate(0,0);}100%{opacity:0;transform:translate(var(--tx),var(--ty));}}
+
+@media(max-width:768px){
+  .header h1{font-size:2em;}
+  .mission-word{font-size:2.2em;}
+  #inputArea{font-size:1.6em;}
+  .top-controls{top:8px;right:8px;}
+  .ctrl-btn{padding:8px 12px;font-size:0.9em;}
+}
+</style>
+</head>
+<body>
+
+<!-- 컨트롤 버튼 -->
+<div class="top-controls">
+  <div class="ctrl-row">
+    <button class="ctrl-btn btn-tts" id="btnTTS" onclick="toggleTTS()">🔊 읽어주기 ON</button>
+    <button class="ctrl-btn btn-speed" id="btnSpeed" onclick="changeSpeed()">🐢 천천히</button>
+  </div>
+  <div class="ctrl-row">
+    <button class="ctrl-btn btn-sfx" id="btnSFX" onclick="toggleSFX()">🎵 효과음 ON</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="header">
+    <h1>🐔 닭 키우기 한글 타자</h1>
+    <p class="subtitle">한글을 차근차근 배우며 닭장을 가득 채워요!</p>
+  </div>
+
+  <!-- 커리큘럼 맵 -->
+  <div class="card" style="background:#fff5e6;border-radius:18px;padding:18px;margin-bottom:18px;border:3px solid #ffd700;">
+    <div style="font-size:1em;font-weight:bold;color:#ff6b6b;margin-bottom:12px;">📚 30단계 커리큘럼</div>
+    <div id="curMap"></div>
+  </div>
+
+  <div class="level-info">
+    <div class="level-badge" id="levelBadge">1단계</div>
+    <div class="level-name-tag" id="levelNameTag">기본 모음 1</div>
+    <div class="mission-counter" id="missionCounter">문제 1/20</div>
+  </div>
+
+  <!-- 사이클 진행 (알 20개) -->
+  <div class="cycle-wrap">
+    <div class="cycle-top">
+      <span class="cycle-label">🥚 알 모으기 <span id="cycleCount">0</span> / 20개</span>
+      <span class="cycle-stage-badge csb-egg" id="cycleBadge">🥚 알 모으는 중</span>
+    </div>
+    <div class="cycle-eggs" id="cycleEggs"></div>
+    <div class="cycle-bar-out"><div class="cycle-bar-in" id="cycleBar" style="width:0%"></div></div>
+  </div>
+
+  <!-- 미션 진행 -->
+  <div class="mission-prog">
+    <div class="mp-row"><span class="mp-label">이번 단계 진행</span><span class="mp-count" id="mpCount">0 / 20</span></div>
+    <div class="mp-bar"><div class="mp-fill" id="mpFill" style="width:0%"></div></div>
+  </div>
+
+  <!-- 닭장 -->
+  <div class="coop-card">
+    <div class="coop-header">
+      <div class="coop-title">🏡 닭장</div>
+      <div class="coop-count" id="coopCount">0 / 30마리</div>
+    </div>
+    <div class="coop-sub">단계를 클리어할 때마다 닭이 한 마리씩 들어와요!</div>
+    <div class="coop-grid" id="coopGrid"></div>
+  </div>
+
+  <!-- 통계 -->
+  <div class="stats">
+    <div class="stat-item"><div class="stat-value" id="totalEggs">0</div><div class="stat-label">⭐ 별</div></div>
+    <div class="stat-item"><div class="stat-value" id="accuracy">100%</div><div class="stat-label">🎯 정확도</div></div>
+    <div class="stat-item"><div class="stat-value" id="successCount">0</div><div class="stat-label">🏆 성공</div></div>
+  </div>
+
+  <!-- 게임 영역 -->
+  <div class="game-area">
+    <div class="mission-box" id="missionBox">
+      <div class="mission-word" id="missionWord">시작 버튼을 눌러요</div>
+      <button class="speak-btn" id="speakBtn" onclick="speakCurrent()" style="display:none;" title="다시 읽어주기">🔊</button>
+    </div>
+    <div id="inputArea" style="display:none;"></div>
+    <input type="text" id="typingInput" placeholder="여기에 똑같이 쳐요" disabled
+      autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+      style="display:none;width:100%;font-size:2.2em;padding:20px;border:4px solid #ddd;border-radius:14px;text-align:center;font-family:inherit;transition:all 0.3s;background:#fffef7;">
+    <div class="feedback-msg" id="feedbackMsg"></div>
+    <button class="skip-btn" id="skipBtn" onclick="skipWord()" style="display:none;">모르겠어요 (건너뛰기) 🙈</button>
+  </div>
+
+  <div class="buttons">
+    <button class="btn-next" id="btnStart">🚀 시작하기</button>
+    <button class="btn-custom" id="btnCustom">📝 선생님 문제</button>
+  </div>
+</div>
+
+<!-- 선생님 문제 모달 -->
+<div class="modal" id="customModal">
+  <div class="modal-content">
+    <h2>👩‍🏫 선생님 문제 만들기</h2>
+    <p style="color:#888;margin-bottom:14px;">한 줄에 하나씩 문제를 써요 (최대 30개)</p>
+    <textarea id="customText" placeholder="예시:&#10;안녕하세요&#10;반갑습니다&#10;한글 타자"></textarea>
+    <div class="modal-buttons">
+      <button class="btn-next" id="btnSaveCustom" style="flex:1;">✨ 문제 시작</button>
+      <button class="btn-custom" id="btnCancelCustom" style="flex:1;">❌ 닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 레벨 클리어 / 알 변신 팝업 -->
+<div class="burst-overlay" id="burstOverlay" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;background:rgba(255,107,107,0.35);z-index:999;">
+  <div class="burst-box">
+    <span class="burst-emoji" id="burstEmoji">🎊</span>
+    <div class="burst-title" id="burstTitle"></div>
+    <div class="burst-sub" id="burstSub"></div>
+    <button class="btn-continue" onclick="closeBurst()">계속하기 🎉</button>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════
+   📚 30단계 커리큘럼
+═══════════════════════════════════════════ */
+const CURRICULUM=[
+  {name:'기본 모음 1',  emoji:'🌱',cat:'모음',  words:['ㅏ','ㅑ','ㅓ','ㅕ','ㅗ','ㅛ','ㅜ','ㅠ','ㅡ','ㅣ','ㅏ','ㅑ','ㅓ','ㅕ','ㅗ','ㅛ','ㅜ','ㅠ','ㅡ','ㅣ']},
+  {name:'기본 모음 2',  emoji:'🌿',cat:'모음',  words:['아','야','어','여','오','요','우','유','으','이','아','야','어','여','오','요','우','유','으','이']},
+  {name:'이중 모음',    emoji:'🍀',cat:'모음',  words:['애','에','외','위','의','와','워','왜','웨','얘','애','에','외','위','의','와','워','왜','웨','얘']},
+  {name:'기본 자음 1',  emoji:'🌟',cat:'자음',  words:['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ']},
+  {name:'기본 자음 2',  emoji:'⭐',cat:'자음',  words:['ㅋ','ㅌ','ㅍ','ㅎ','ㄲ','ㄸ','ㅃ','ㅆ','ㅉ','ㅋ','ㅌ','ㅍ','ㅎ','ㄲ','ㄸ','ㅃ','ㅆ','ㅉ','ㅋ','ㅌ']},
+  {name:'한 글자 1',    emoji:'🐣',cat:'한 글자',words:['가','나','다','라','마','바','사','아','자','차','가','나','다','라','마','바','사','아','자','차']},
+  {name:'한 글자 2',    emoji:'🐤',cat:'한 글자',words:['카','타','파','하','기','니','디','리','미','비','카','타','파','하','기','니','디','리','미','비']},
+  {name:'한 글자 3',    emoji:'🌸',cat:'한 글자',words:['고','노','도','로','모','보','소','오','조','초','고','노','도','로','모','보','소','오','조','초']},
+  {name:'한 글자 4',    emoji:'🌺',cat:'한 글자',words:['구','누','두','루','무','부','수','우','주','추','구','누','두','루','무','부','수','우','주','추']},
+  {name:'한 글자 5',    emoji:'🌼',cat:'한 글자',words:['과','봐','뒤','쥐','위','새','게','세','배','태','과','봐','뒤','쥐','위','새','게','세','배','태']},
+  {name:'받침 글자 1',  emoji:'🐰',cat:'받침',  words:['강','방','당','랑','망','상','장','창','항','양','강','방','당','랑','망','상','장','창','항','양']},
+  {name:'받침 글자 2',  emoji:'🐱',cat:'받침',  words:['각','간','달','박','난','날','말','삭','탁','칸','각','간','달','박','난','날','말','삭','탁','칸']},
+  {name:'받침 글자 3',  emoji:'🐶',cat:'받침',  words:['발','말','살','밤','담','삼','입','밥','탑','법','발','말','살','밤','담','삼','입','밥','탑','법']},
+  {name:'받침 글자 4',  emoji:'🦊',cat:'받침',  words:['빛','꽃','낮','밭','옷','낱','맛','겉','못','솥','빛','꽃','낮','밭','옷','낱','맛','겉','못','솥']},
+  {name:'받침 글자 5',  emoji:'🐸',cat:'받침',  words:['닭','흙','삶','읽','끝','없','앉','젊','짧','밝','닭','흙','삶','읽','끝','없','앉','젊','짧','밝']},
+  {name:'두 글자 1',    emoji:'🍎',cat:'두 글자',words:['사과','포도','딸기','수박','참외','귤','배','감','콩','쌀','사과','포도','딸기','수박','참외','귤','배','감','콩','쌀']},
+  {name:'두 글자 2',    emoji:'🐕',cat:'두 글자',words:['강아지','고양이','토끼','다람쥐','오리','말','소','돼지','양','닭','강아지','고양이','토끼','다람쥐','오리','말','소','돼지','양','닭']},
+  {name:'두 글자 3',    emoji:'🏫',cat:'두 글자',words:['학교','교실','선생님','친구','공부','숙제','급식','도서관','운동장','칠판','학교','교실','선생님','친구','공부','숙제','급식','도서관','운동장','칠판']},
+  {name:'두 글자 4',    emoji:'🌈',cat:'두 글자',words:['하늘','구름','바람','햇살','무지개','천둥','번개','안개','태양','바다','하늘','구름','바람','햇살','무지개','천둥','번개','안개','태양','바다']},
+  {name:'두 글자 5',    emoji:'👨‍👩‍👧',cat:'두 글자',words:['아빠','엄마','할머니','할아버지','오빠','언니','동생','형','누나','사촌','아빠','엄마','할머니','할아버지','오빠','언니','동생','형','누나','사촌']},
+  {name:'세 글자 1',    emoji:'🚗',cat:'세 글자',words:['자동차','버스','기차','비행기','자전거','지하철','트럭','택시','오토바이','배','자동차','버스','기차','비행기','자전거','지하철','트럭','택시','오토바이','배']},
+  {name:'세 글자 2',    emoji:'🎨',cat:'세 글자',words:['빨간색','파란색','노란색','초록색','보라색','주황색','분홍색','하얀색','검은색','갈색','빨간색','파란색','노란색','초록색','보라색','주황색','분홍색','하얀색','검은색','갈색']},
+  {name:'세 글자 3',    emoji:'📚',cat:'세 글자',words:['연필','지우개','공책','색연필','가위','풀','자','색종이','크레파스','도화지','연필','지우개','공책','색연필','가위','풀','자','색종이','크레파스','도화지']},
+  {name:'세 글자 4',    emoji:'🏃',cat:'세 글자',words:['달리기','뛰어넘기','던지기','잡기','굴리기','당기기','밀기','오르기','돌리기','두드리기','달리기','뛰어넘기','던지기','잡기','굴리기','당기기','밀기','오르기','돌리기','두드리기']},
+  {name:'세 글자 5',    emoji:'💝',cat:'세 글자',words:['기쁘다','슬프다','무섭다','신나다','부끄럽다','따뜻하다','차갑다','배고프다','졸리다','피곤하다','기쁘다','슬프다','무섭다','신나다','부끄럽다','따뜻하다','차갑다','배고프다','졸리다','피곤하다']},
+  {name:'짧은 문장 1',  emoji:'📝',cat:'문장',  words:['나는 학교에 가요.','우리는 친구예요.','나는 밥을 먹어요.','우리 집은 커요.','나는 책을 읽어요.','하늘이 파래요.','꽃이 예뻐요.','비가 와요.','눈이 내려요.','바람이 불어요.','나는 학교에 가요.','우리는 친구예요.','나는 밥을 먹어요.','우리 집은 커요.','나는 책을 읽어요.','하늘이 파래요.','꽃이 예뻐요.','비가 와요.','눈이 내려요.','바람이 불어요.']},
+  {name:'짧은 문장 2',  emoji:'📖',cat:'문장',  words:['오늘 날씨가 맑아요.','꽃잎이 날려요.','새가 노래해요.','강물이 흘러요.','달이 밝아요.','별이 반짝여요.','구름이 떠가요.','산이 푸르러요.','물이 차가워요.','바람이 시원해요.','오늘 날씨가 맑아요.','꽃잎이 날려요.','새가 노래해요.','강물이 흘러요.','달이 밝아요.','별이 반짝여요.','구름이 떠가요.','산이 푸르러요.','물이 차가워요.','바람이 시원해요.']},
+  {name:'긴 문장 1',    emoji:'🌟',cat:'문장',  words:['오늘 날씨가 맑고 따뜻해요.','강아지가 공원에서 뛰어놀아요.','엄마와 함께 시장에 갔어요.','친구랑 놀이터에서 놀았어요.','선생님께서 칭찬해 주셨어요.','아침에 일찍 일어났어요.','저녁에 가족과 밥을 먹었어요.','오늘 재미있는 책을 읽었어요.','동생과 함께 그림을 그렸어요.','할머니께 전화를 드렸어요.','오늘 날씨가 맑고 따뜻해요.','강아지가 공원에서 뛰어놀아요.','엄마와 함께 시장에 갔어요.','친구랑 놀이터에서 놀았어요.','선생님께서 칭찬해 주셨어요.','아침에 일찍 일어났어요.','저녁에 가족과 밥을 먹었어요.','오늘 재미있는 책을 읽었어요.','동생과 함께 그림을 그렸어요.','할머니께 전화를 드렸어요.']},
+  {name:'긴 문장 2',    emoji:'🏆',cat:'문장',  words:['도서관에서 재미있는 책을 빌렸어요.','급식 시간에 맛있는 밥을 먹었어요.','운동장에서 친구들과 축구를 했어요.','선생님께 모르는 것을 여쭤봤어요.','오늘 학교에서 그림 그리기를 배웠어요.','체육 시간에 줄넘기를 잘했어요.','음악 시간에 노래를 신나게 불렀어요.','미술 시간에 찰흙으로 동물을 만들었어요.','과학 시간에 식물을 관찰했어요.','수학 문제를 혼자서 풀었어요.','도서관에서 재미있는 책을 빌렸어요.','급식 시간에 맛있는 밥을 먹었어요.','운동장에서 친구들과 축구를 했어요.','선생님께 모르는 것을 여쭤봤어요.','오늘 학교에서 그림 그리기를 배웠어요.','체육 시간에 줄넘기를 잘했어요.','음악 시간에 노래를 신나게 불렀어요.','미술 시간에 찰흙으로 동물을 만들었어요.','과학 시간에 식물을 관찰했어요.','수학 문제를 혼자서 풀었어요.']},
+  {name:'문단 도전! 👑',emoji:'👑',cat:'문단',  words:['봄이 왔어요. 꽃이 활짝 피었어요.','아침에 일어나서 이를 닦았어요. 그리고 학교에 갔어요.','오늘은 체육 시간이 있어요. 운동장에서 달리기를 해요.','도서관에서 책을 읽었어요. 정말 재미있는 이야기였어요.','친구에게 선물을 받았어요. 정말 기쁘고 감사했어요.','여름이 되었어요. 수박이 맛있는 계절이에요.','가을 하늘이 높아요. 단풍잎이 예쁘게 물들었어요.','겨울에 눈이 내렸어요. 온 세상이 하얗게 되었어요.','오늘은 소풍날이에요. 친구들과 함께 산에 올라갔어요.','열심히 공부했어요. 선생님께 칭찬을 받았어요.','봄이 왔어요. 꽃이 활짝 피었어요.','아침에 일어나서 이를 닦았어요. 그리고 학교에 갔어요.','오늘은 체육 시간이 있어요. 운동장에서 달리기를 해요.','도서관에서 책을 읽었어요. 정말 재미있는 이야기였어요.','친구에게 선물을 받았어요. 정말 기쁘고 감사했어요.','여름이 되었어요. 수박이 맛있는 계절이에요.','가을 하늘이 높아요. 단풍잔이 예쁘게 물들었어요.','겨울에 눈이 내렸어요. 온 세상이 하얗게 되었어요.','오늘은 소풍날이에요. 친구들과 함께 산에 올라갔어요.','열심히 공부했어요. 선생님께 칭찬을 받았어요.']},
+];
+const CATS=['모음','자음','한 글자','받침','두 글자','세 글자','문장','문단'];
+
+/* 사이클 단계 (알 20개) */
+const CYCLE_STAGES=[
+  {at:0,  emoji:'🥚',label:'알 모으는 중',  cls:'csb-egg'},
+  {at:7,  emoji:'🐣',label:'병아리 탄생!',  cls:'csb-chick'},
+  {at:13, emoji:'🐤',label:'중닭으로 성장!',cls:'csb-mid'},
+  {at:20, emoji:'🐔',label:'닭 완성!',      cls:'csb-hen'},
+];
+const EGG_MAX=20,COOP_MAX=30;
+
+/* ═══════════════════════════════════════════
+   🔊 TTS (Web Speech API)
+═══════════════════════════════════════════ */
+let ttsEnabled=true;
+let sfxEnabled=true;
+const SPEEDS=[{rate:0.6,label:'🐢 천천히'},{rate:0.85,label:'🚶 보통'},{rate:1.1,label:'🏃 빠르게'}];
+let speedIdx=0;
+
+function toggleTTS(){
+  ttsEnabled=!ttsEnabled;
+  const b=document.getElementById('btnTTS');
+  b.textContent=ttsEnabled?'🔊 읽어주기 ON':'🔇 읽어주기 OFF';
+  b.classList.toggle('off',!ttsEnabled);
+  if(!ttsEnabled) window.speechSynthesis.cancel();
+}
+function toggleSFX(){
+  sfxEnabled=!sfxEnabled;
+  const b=document.getElementById('btnSFX');
+  b.textContent=sfxEnabled?'🎵 효과음 ON':'🎵 효과음 OFF';
+  b.classList.toggle('off',!sfxEnabled);
+}
+function changeSpeed(){
+  speedIdx=(speedIdx+1)%SPEEDS.length;
+  document.getElementById('btnSpeed').textContent=SPEEDS[speedIdx].label;
+}
+
+function speak(text, onEnd){
+  if(!ttsEnabled){if(onEnd)onEnd();return;}
+  window.speechSynthesis.cancel();
+  const utt=new SpeechSynthesisUtterance(text);
+  utt.lang='ko-KR';
+  utt.rate=SPEEDS[speedIdx].rate;
+  utt.pitch=1.1;
+  utt.volume=1;
+  // 한국어 목소리 우선 선택
+  const voices=window.speechSynthesis.getVoices();
+  const koVoice=voices.find(v=>v.lang.includes('ko'));
+  if(koVoice)utt.voice=koVoice;
+  if(onEnd)utt.onend=onEnd;
+  window.speechSynthesis.speak(utt);
+}
+
+function speakWord(word){
+  // 자음/모음 단독 글자는 이름으로 읽어주기
+  const jaumMap={'ㄱ':'기역','ㄴ':'니은','ㄷ':'디귿','ㄹ':'리을','ㅁ':'미음','ㅂ':'비읍','ㅅ':'시옷','ㅇ':'이응','ㅈ':'지읒','ㅊ':'치읓','ㅋ':'키읔','ㅌ':'티읕','ㅍ':'피읖','ㅎ':'히읗','ㄲ':'쌍기역','ㄸ':'쌍디귿','ㅃ':'쌍비읍','ㅆ':'쌍시옷','ㅉ':'쌍지읒','ㄳ':'기역시옷'};
+  const moumMap={'ㅏ':'아','ㅑ':'야','ㅓ':'어','ㅕ':'여','ㅗ':'오','ㅛ':'요','ㅜ':'우','ㅠ':'유','ㅡ':'으','ㅣ':'이','ㅐ':'애','ㅔ':'에','ㅚ':'외','ㅟ':'위','ㅢ':'의','ㅘ':'와','ㅝ':'워','ㅒ':'얘','ㅖ':'예','ㅙ':'왜','ㅞ':'웨'};
+  const readText = jaumMap[word]||moumMap[word]||word;
+  speak(readText);
+}
+
+function speakCurrent(){
+  if(missionWords.length&&missionIdx<missionWords.length){
+    speakWord(missionWords[missionIdx]);
+  }
+}
+
+/* ═══════════════════════════════════════════
+   🎵 Web Audio (효과음)
+═══════════════════════════════════════════ */
+let audioCtx=null,masterGain=null;
+let masterVol=0.5;
+function getAC(){
+  if(!audioCtx){
+    audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    masterGain=audioCtx.createGain();masterGain.gain.value=masterVol;
+    masterGain.connect(audioCtx.destination);
+  }
+  return audioCtx;
+}
+function tone(freq,dur,type='sine',vol=0.3){
+  if(!sfxEnabled)return;
+  const ctx=getAC();
+  const o=ctx.createOscillator(),g=ctx.createGain();
+  o.type=type;o.frequency.value=freq;
+  g.gain.setValueAtTime(vol*masterVol,ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+dur);
+  o.connect(g);g.connect(masterGain);o.start();o.stop(ctx.currentTime+dur+0.02);
+}
+function sfxSuccess(){
+  if(!sfxEnabled)return;
+  [[523.3,0],[659.3,0.09],[783.9,0.18],[1046.5,0.29]].forEach(([f,d])=>{
+    const ctx=getAC();const o=ctx.createOscillator(),g=ctx.createGain();
+    o.type='triangle';o.frequency.value=f;
+    const t=ctx.currentTime+d;
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.28*masterVol,t+0.015);g.gain.exponentialRampToValueAtTime(0.001,t+0.2);
+    o.connect(g);g.connect(masterGain);o.start(t);o.stop(t+0.22);
+  });
+}
+function sfxWrong(){tone(220,0.22,'sawtooth',0.22);}
+function sfxEvolve(){
+  if(!sfxEnabled)return;
+  const ctx=getAC();
+  const sw=ctx.createOscillator(),sg=ctx.createGain();
+  sw.type='sawtooth';
+  sw.frequency.setValueAtTime(200,ctx.currentTime);
+  sw.frequency.exponentialRampToValueAtTime(1400,ctx.currentTime+0.6);
+  sg.gain.setValueAtTime(0.18*masterVol,ctx.currentTime);
+  sg.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.65);
+  sw.connect(sg);sg.connect(masterGain);sw.start();sw.stop(ctx.currentTime+0.68);
+  setTimeout(()=>sfxSuccess(),700);
+}
+function sfxLevelUp(){
+  if(!sfxEnabled)return;
+  [392,523.3,659.3,783.9,1046.5].forEach((f,i)=>{
+    const ctx=getAC();const o=ctx.createOscillator(),g=ctx.createGain();
+    o.type='triangle';o.frequency.value=f;
+    const t=ctx.currentTime+i*0.11;
+    g.gain.setValueAtTime(0.28*masterVol,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.25);
+    o.connect(g);g.connect(masterGain);o.start(t);o.stop(t+0.27);
+  });
+}
+
+/* 파티클/폭죽 */
+function spawnParticles(emojis){
+  const cx=window.innerWidth/2,cy=window.innerHeight/2;
+  emojis.forEach((em,i)=>{
+    const el=document.createElement('div');el.className='particle';el.textContent=em;
+    const angle=Math.PI*2*i/emojis.length,dist=100+Math.random()*80;
+    el.style.left=cx+'px';el.style.top=cy+'px';
+    el.style.setProperty('--tx',Math.cos(angle)*dist+'px');
+    el.style.setProperty('--ty',Math.sin(angle)*dist-50+'px');
+    document.body.appendChild(el);setTimeout(()=>el.remove(),1300);
+  });
+}
+function createFireworks(){
+  const colors=['#ff6b6b','#ffa502','#ffd700','#4ecdc4','#45b7d1','#f7dc6f'];
+  for(let i=0;i<4;i++){setTimeout(()=>{
+    const x=Math.random()*window.innerWidth,y=Math.random()*window.innerHeight*0.5;
+    for(let j=0;j<24;j++){
+      const fw=document.createElement('div');fw.className='firework';
+      fw.style.left=x+'px';fw.style.top=y+'px';
+      fw.style.background=colors[Math.floor(Math.random()*colors.length)];
+      const angle=Math.PI*2*j/24,vel=80+Math.random()*80;
+      fw.style.setProperty('--tx',Math.cos(angle)*vel+'px');
+      fw.style.setProperty('--ty',Math.sin(angle)*vel+'px');
+      document.body.appendChild(fw);setTimeout(()=>fw.remove(),1050);
+    }
+  },i*180);}
+}
+
+/* ═══════════════════════════════════════════
+   게임 상태
+═══════════════════════════════════════════ */
+let currentLevel=0,missionWords=[],missionIdx=0;
+let cycleEggs=0,coopCount=0;
+let clearedLevels=new Set();
+let pendingBurst=null;
+let correctCount=0,totalAttempts=0,totalEggsAll=0;
+let gameStarted=false;
+let wrongFired=false;
+let customWords=[],isCustomMode=false;
+
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+function cycleStageIdx(n){let s=0;CYCLE_STAGES.forEach((st,i)=>{if(n>=st.at)s=i;});return s;}
+
+/* ── 커리큘럼 맵 렌더 ── */
+function renderCurMap(){
+  const map=document.getElementById('curMap');
+  const groups={};
+  CURRICULUM.forEach((lv,i)=>{if(!groups[lv.cat])groups[lv.cat]=[];groups[lv.cat].push({lv,i});});
+  let html='';
+  CATS.forEach(cat=>{
+    if(!groups[cat])return;
+    html+=`<div class="cur-section"><div class="cur-cat">${cat}</div><div class="cur-grid">`;
+    groups[cat].forEach(({lv,i})=>{
+      const cls=clearedLevels.has(i)?'done':i===currentLevel?'current':i<currentLevel?'unlocked':'locked';
+      const icon=clearedLevels.has(i)?'✅':i<=currentLevel?lv.emoji:'🔒';
+      const oc=(cls==='unlocked'||cls==='current')?`onclick="jumpLevel(${i})"`:'';
+      html+=`<button class="cur-btn ${cls}" ${oc}>${icon} ${i+1}단계</button>`;
+    });
+    html+='</div></div>';
+  });
+  map.innerHTML=html;
+}
+function jumpLevel(i){currentLevel=i;renderCurMap();}
+
+/* ── 레벨 시작 ── */
+function startLevel(idx){
+  currentLevel=idx;
+  const lv=CURRICULUM[idx];
+  let pool=isCustomMode?[...customWords]:[...lv.words];
+  missionWords=shuffle(pool).slice(0,20);
+  missionIdx=0;cycleEggs=0;
+  document.getElementById('levelBadge').textContent=(idx+1)+'단계';
+  document.getElementById('levelNameTag').textContent=lv.name;
+  renderCurMap();
+  renderCycleBar();
+  renderMissionProg();
+  renderCoop();
+  renderWord();
+}
+
+/* ── 단어 렌더 ── */
+function renderWord(){
+  if(missionIdx>=missionWords.length){
+    // 레벨 클리어
+    clearedLevels.add(currentLevel);
+    coopCount=Math.min(coopCount+1,COOP_MAX);
+    renderCoop();renderCurMap();
+    if(currentLevel>=CURRICULUM.length-1){
+      document.getElementById('missionBox').querySelector('.mission-word').textContent='';
+      document.getElementById('typingInput').style.display='none';
+      document.getElementById('skipBtn').style.display='none';
+      document.getElementById('speakBtn').style.display='none';
+      document.getElementById('missionBox').innerHTML=`<div class="done-wrap"><span class="done-big">👑</span><div class="done-txt">30단계 모두 완성!<br>닭장이 꽉 찼어요! 🏡🐔<br>정말 대단해요!</div><button class="btn-restart" onclick="restartAll()">처음부터 다시 하기 🔄</button></div>`;
+      createFireworks();sfxLevelUp();
+    } else {
+      showLevelClear();
+    }
+    return;
+  }
+  const word=missionWords[missionIdx];
+  const isSent=word.length>6;
+  const wEl=document.getElementById('missionWord');
+  wEl.className='mission-word'+(isSent?' sentence':'');
+  wEl.textContent=word;
+  document.getElementById('speakBtn').style.display='block';
+  const inp=document.getElementById('typingInput');
+  inp.style.display='block';inp.value='';inp.className='';
+  inp.placeholder=isSent?'띄어쓰기도 맞게 쳐요':'여기에 똑같이 쳐요';
+  if(isSent)inp.style.fontSize='1.4em'; else inp.style.fontSize='2.2em';
+  document.getElementById('skipBtn').style.display='block';
+  document.getElementById('feedbackMsg').textContent='';
+  document.getElementById('feedbackMsg').className='feedback-msg';
+  document.getElementById('missionCounter').textContent='문제 '+(missionIdx+1)+'/20';
+  renderMissionProg();
+  wrongFired=false;
+  inp.disabled=false;
+  inp.focus();
+  // 문제 나올 때 자동으로 읽어주기
+  setTimeout(()=>speakWord(word),300);
+}
+
+function renderChars(target,typed){
+  const el=document.getElementById('missionWord');
+  let html='';
+  for(let i=0;i<target.length;i++){
+    const ch=target[i]===' '?'\u00a0':target[i];
+    const cls=i<typed.length?(typed[i]===target[i]?'ch-correct':'ch-wrong'):i===typed.length?'ch-current':'ch-pending';
+    html+=`<span class="${cls}">${ch}</span>`;
+  }
+  el.innerHTML=html;
+}
+
+/* ── 입력 이벤트 ── */
+document.getElementById('typingInput').addEventListener('input',function(){
+  const target=missionWords[missionIdx],typed=this.value;
+  renderChars(target,typed);
+  const fm=document.getElementById('feedbackMsg');
+  if(typed===target){
+    this.className='correct'; // CSS via style attr
+    this.style.borderColor='#4CAF50';this.style.background='#e8f5e9';
+    fm.textContent='🎉 정답!';fm.className='feedback-msg good';
+    correctCount++;totalAttempts++;totalEggsAll++;wrongFired=false;
+    sfxSuccess();
+    spawnParticles(['⭐','✨','🌟','🐔']);
+    // "잘했어요!" 칭찬 읽어주기
+    speak('잘했어요!');
+    cycleEggs=Math.min(cycleEggs+1,EGG_MAX);
+    renderCycleBar();
+    updateStats();
+    const bust=CYCLE_STAGES.find(s=>s.at===cycleEggs&&s.at>0&&s.at<EGG_MAX);
+    if(bust){
+      pendingBurst={type:'mid',emoji:bust.emoji,title:bust.label,sub:'알을 '+bust.at+'개 모았어요!'};
+      sfxEvolve();
+      setTimeout(showBurst,400);return;
+    }
+    missionIdx++;
+    setTimeout(renderWord,700);
+  } else if(typed.length>=target.length){
+    this.style.borderColor='#f44336';this.style.background='#ffebee';
+    fm.textContent='🙈 다시 해봐요!';fm.className='feedback-msg bad';
+    if(!wrongFired){sfxWrong();totalAttempts++;wrongFired=true;updateStats();}
+  } else {
+    this.style.borderColor='#ddd';this.style.background='#fffef7';
+    fm.textContent='';fm.className='feedback-msg';
+    wrongFired=false;
+  }
+});
+
+function skipWord(){
+  missionIdx++;
+  renderMissionProg();
+  renderWord();
+}
+
+/* ── 사이클바 ── */
+function renderCycleBar(){
+  const grid=document.getElementById('cycleEggs');
+  let html='';
+  for(let i=0;i<EGG_MAX;i++){
+    const filled=i<cycleEggs;
+    const si=cycleStageIdx(i+1);
+    html+=`<div class="cegg${filled?' filled':''}">${filled?CYCLE_STAGES[si].emoji:''}</div>`;
+  }
+  grid.innerHTML=html;
+  const si=cycleStageIdx(cycleEggs);const st=CYCLE_STAGES[si];
+  const badge=document.getElementById('cycleBadge');
+  badge.textContent=st.emoji+' '+st.label;badge.className='cycle-stage-badge '+st.cls;
+  document.getElementById('cycleCount').textContent=cycleEggs;
+  document.getElementById('cycleBar').style.width=(cycleEggs/EGG_MAX*100)+'%';
+}
+
+/* ── 미션 진행 ── */
+function renderMissionProg(){
+  const pct=Math.round(missionIdx/20*100);
+  document.getElementById('mpCount').textContent=missionIdx+' / 20';
+  document.getElementById('mpFill').style.width=pct+'%';
+}
+
+/* ── 닭장 ── */
+function renderCoop(){
+  const grid=document.getElementById('coopGrid');
+  let html='';
+  for(let i=0;i<COOP_MAX;i++){
+    const filled=i<coopCount;
+    const isNew=filled&&i===coopCount-1;
+    html+=`<div class="coop-slot${filled?' filled':''}${isNew?' just-added':''}">${filled?'🐔':''}</div>`;
+  }
+  grid.innerHTML=html;
+  document.getElementById('coopCount').textContent=coopCount+' / '+COOP_MAX+'마리';
+}
+
+/* ── 통계 ── */
+function updateStats(){
+  document.getElementById('totalEggs').textContent=totalEggsAll;
+  document.getElementById('successCount').textContent=correctCount;
+  if(totalAttempts>0)document.getElementById('accuracy').textContent=Math.round(correctCount/totalAttempts*100)+'%';
+}
+
+/* ── 레벨 클리어 팝업 ── */
+function showLevelClear(){
+  const lv=CURRICULUM[currentLevel];
+  const next=CURRICULUM[currentLevel+1];
+  pendingBurst={
+    type:'level',emoji:'🐔',
+    title:`${currentLevel+1}단계 클리어!`,
+    sub:`닭이 한 마리 늘었어요! (${coopCount}마리)\n\n다음은 ${currentLevel+2}단계\n「${next.name}」이에요!`
+  };
+  sfxLevelUp();createFireworks();
+  spawnParticles(['🐔','⭐','🌟','✨','🎉','🐣']);
+  speak((currentLevel+1)+'단계 클리어! 정말 잘했어요!');
+  showBurst();
+}
+
+function showBurst(){
+  if(!pendingBurst)return;
+  document.getElementById('burstEmoji').textContent=pendingBurst.emoji;
+  document.getElementById('burstTitle').textContent=pendingBurst.title;
+  document.getElementById('burstSub').textContent=pendingBurst.sub||'';
+  document.getElementById('burstOverlay').style.display='flex';
+}
+function closeBurst(){
+  document.getElementById('burstOverlay').style.display='none';
+  const type=pendingBurst?.type;pendingBurst=null;
+  if(type==='level'){currentLevel++;startLevel(currentLevel);}
+  else{missionIdx++;renderMissionProg();renderWord();}
+}
+
+/* ── 시작/재시작 ── */
+function restartAll(){
+  currentLevel=0;cycleEggs=0;coopCount=0;
+  clearedLevels.clear();correctCount=0;totalAttempts=0;totalEggsAll=0;
+  isCustomMode=false;
+  updateStats();startLevel(0);
+}
+
+/* ── 버튼 이벤트 ── */
+document.getElementById('btnStart').addEventListener('click',()=>{
+  getAC();
+  if(!gameStarted){
+    gameStarted=true;
+    document.getElementById('btnStart').textContent='⏭️ 다음 문제';
+    startLevel(0);
+  } else {
+    missionIdx++;renderMissionProg();renderWord();
+  }
+});
+
+document.getElementById('btnCustom').addEventListener('click',()=>{
+  document.getElementById('customModal').classList.add('active');
+});
+document.getElementById('btnSaveCustom').addEventListener('click',()=>{
+  const lines=document.getElementById('customText').value.trim().split('\n').filter(l=>l.trim());
+  if(!lines.length)return alert('⚠️ 최소 1개 입력!');
+  if(lines.length>30)return alert('⚠️ 최대 30개까지!');
+  customWords=lines;isCustomMode=true;
+  document.getElementById('customModal').classList.remove('active');
+  getAC();gameStarted=true;
+  document.getElementById('btnStart').textContent='⏭️ 다음 문제';
+  startLevel(currentLevel);
+});
+document.getElementById('btnCancelCustom').addEventListener('click',()=>{
+  document.getElementById('customModal').classList.remove('active');
+});
+
+// 목소리 로드 대기
+window.speechSynthesis.onvoiceschanged=()=>{};
+if(window.speechSynthesis.getVoices().length===0){
+  window.speechSynthesis.addEventListener('voiceschanged',()=>{},once=true);
+}
+
+// 초기 커리큘럼 맵 렌더
+renderCurMap();
+renderCoop();
+</script>
+</body>
+</html>
