@@ -1173,35 +1173,13 @@ function initTraceDrawGame(cfg){
 }
 function clearTraceCanvas(){const cv=document.getElementById('traceDrawCanvas');if(cv&&cv._ctx)cv._ctx.clearRect(0,0,cv.width,cv.height);sfxTick();}
 
-/* 숨은 냥이 찾기 */
 function initPreciseGame(cfg){
-  missionProgress=0;
-  const area=document.getElementById('preciseArea');if(!area)return;area.innerHTML='';
-  const cats=['🐱','😺','😸','🐾','😻','🐈','😽','😼'];
-  const decoys=['🌸','⭐','🌟','💫','✨','🌈','🎀','🎵','🍀','🌺','🦋','🌙','🎈','🍭','🎯'];
-  cats.slice(0,cfg.count).forEach(cat=>{
-    const el=document.createElement('div');el.className='precise-target';
-    el.textContent=cat;el.style.fontSize=cfg.catSize;
-    el.style.left=Math.random()*83+'%';el.style.top=Math.random()*83+'%';
-    el.onclick=()=>{
-      sfxSuccess();spawnParticles(['🐱','⭐','✨']);
-      el.style.animation='pfly 0.5s ease-out forwards';
-      el.style.setProperty('--tx','0px');el.style.setProperty('--ty','-60px');
-      missionProgress++;updateProgress();
-      setTimeout(()=>el.remove(),500);
-      if(missionProgress>=missionTotal)setTimeout(completeMission,600);
-    };
-    area.appendChild(el);
-  });
-  for(let i=0;i<cfg.decoys;i++){
-    const el=document.createElement('div');
-    el.textContent=decoys[i%decoys.length];
-    el.style.position='absolute';el.style.pointerEvents='none';
-    el.style.fontSize=(parseInt(cfg.catSize)+8+Math.random()*10)+'px';
-    el.style.left=Math.random()*90+'%';el.style.top=Math.random()*90+'%';
-    el.style.opacity='0.4';area.appendChild(el);
-  }
-  updateProgress();
+  missionProgress = 0;
+  missionTotal = cfg.count; // 🔑 cfg.count(9)를 missionTotal과 동기화
+  const area = document.getElementById('preciseArea');
+  if(!area) return;
+  area.innerHTML = '';
+  // ... 이하 기존 코드
 }
 
 /* ── 별 생성 ── */
